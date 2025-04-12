@@ -58,7 +58,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLast, animateLastM
     >
       <div className="flex w-full max-w-screen-lg mx-auto space-x-4">
         <Avatar className={cn(
-          "h-8 w-8 rounded-full shrink-0", // Changed from rounded-md to rounded-full
+          "h-8 w-8 rounded-full shrink-0",
           isUser ? "bg-chat-user-bubble" : "bg-chat-bot-bubble"
         )}>
           {isUser ? (
@@ -70,7 +70,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLast, animateLastM
               </AvatarFallback>
             )
           ) : (
-            <AvatarImage src="https://i.ibb.co/xKtY6RXz/Chat-GPT-Image-1-2025-17-16-51.png" alt="SenterosAI" className="h-full w-full object-contain p-1" />
+            <AvatarImage src="https://i.ibb.co/xKtY6RXz/Chat-GPT-Image-1-2025-17-16-51.png" alt="SenterosAI" className="h-full w-full object-contain p-1 bg-transparent" />
           )}
         </Avatar>
         
