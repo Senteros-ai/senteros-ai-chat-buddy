@@ -11,7 +11,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getApiKey } from '@/services/openRouterService';
 import { useToast } from '@/components/ui/use-toast';
 
 interface SettingsDialogProps {
@@ -31,7 +30,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange }) =
     
     setTheme(savedTheme);
     setLanguage(savedLanguage);
-  }, []);
+  }, [open]);
 
   const handleSaveSettings = () => {
     localStorage.setItem('theme', theme);
@@ -68,8 +67,8 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange }) =
           </DialogTitle>
           <DialogDescription>
             {language === 'ru' 
-              ? 'Настройте свой опыт использования SenterosAI' 
-              : 'Configure your SenterosAI experience'}
+              ? 'Настройте внешний вид SenterosAI' 
+              : 'Configure your SenterosAI appearance'}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -102,12 +101,6 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange }) =
                 <SelectItem value="en">English</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          
-          <div className="col-span-4 text-xs text-muted-foreground">
-            {language === 'ru' 
-              ? 'API ключ установлен автоматически' 
-              : 'API key is set automatically'}
           </div>
         </div>
         <DialogFooter>

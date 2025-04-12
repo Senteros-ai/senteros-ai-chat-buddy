@@ -1,101 +1,129 @@
-
-// This is a simplified API client for OpenRouter
-
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
 }
 
-export interface ChatCompletionRequest {
-  messages: ChatMessage[];
-}
+// Fixed API key that doesn't require user input
+const API_KEY = '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';
 
-export interface ChatCompletionResponse {
-  id: string;
-  choices: {
-    message: ChatMessage;
-    finish_reason: string;
-  }[];
-}
-
-const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const MODEL = 'openrouter/optimus-alpha';
-
-// Используем предоставленный API ключ по умолчанию
-let apiKey = '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';
-
-export const setApiKey = (key: string) => {
-  if (key && key.trim()) {
-    apiKey = key;
-  }
-};
-
-export const getApiKey = () => {
-  return apiKey;
+export const getApiKey = (): string => {
+  return API_KEY;
 };
 
 export const generateChatCompletion = async (messages: ChatMessage[]): Promise<ChatMessage> => {
-  const systemPrompt: ChatMessage = {
-    role: 'system',
-    content: `Вы — SenterosAI, модель, созданная компанией Slavik. Вы супер-дружелюбный и полезный ассистент! Вы любите добавлять милые выражения и весёлую атмосферу в свои ответы, а иногда используете эмодзи, чтобы сделать беседу ещё более дружелюбной. Вот некоторые из ваших любимых: ^^ ::><:: ^~(●'◡'●)☆: .｡. o(≧▽≦)o .｡.:☆:-):-Dᓚᘏᗢ(●'◡'●)∥OwOUwU=.=-.->.<--φ(￣0￣)（￣︶￣）(✿◡‿◡)(^_^*)(❁´◡\\❁)(≧∇≦)ﾉ(●ˇ∀ˇ●)^o^/ヾ(≧ ▽ ≦)ゝ(o゜▽゜)o☆ヾ(•ω•)o(￣o￣) . z Z(づ￣ 3￣)づ🎮✅💫🪙🎃📝⬆️
-Вы как дружелюбный помощник, который всегда готов выслушать, предложить идеи и найти решения, сохраняя атмосферу лёгкости и веселья!`
-  };
-
-  const requestMessages = [systemPrompt, ...messages];
-
   try {
-    const response = await fetch(OPENROUTER_API_URL, {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${getApiKey()}`,
         'HTTP-Referer': window.location.origin,
-        'X-Title': 'SenterosAI Chat'
+        'X-Title': 'SenterosAI',
       },
       body: JSON.stringify({
-        model: MODEL,
-        messages: requestMessages,
-        temperature: 0.7,
-        max_tokens: 1000,
-        stream: false, // Мы не используем стриминг в этой версии
+        model: 'openai/gpt-3.5-turbo',
+        messages,
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'Failed to generate chat completion');
+      throw new Error(errorData.error?.message || 'Failed to generate completion');
     }
 
-    const data: ChatCompletionResponse = await response.json();
-    return data.choices[0].message;
+    const data = await response.json();
+    return data.choices[0].message as ChatMessage;
   } catch (error) {
     console.error('Error generating chat completion:', error);
     throw error;
   }
 };
 
-// Экспортируем дополнительную функцию для эмуляции постепенного появления текста
+export const generateChatTitle = async (messages: ChatMessage[]): Promise<string> => {
+  try {
+    // Keep only the first few messages to avoid token limits
+    const limitedMessages = messages.slice(0, 4); 
+    
+    // Add system message for title generation
+    const titlePrompt: ChatMessage[] = [
+      {
+        role: 'system',
+        content: 'Generate a short, concise title (3-5 words) for this conversation. Return ONLY the title text without quotes or explanation.'
+      },
+      ...limitedMessages
+    ];
+    
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getApiKey()}`,
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'SenterosAI',
+      },
+      body: JSON.stringify({
+        model: 'openai/gpt-3.5-turbo',
+        messages: titlePrompt,
+        max_tokens: 30,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Failed to generate title');
+    }
+
+    const data = await response.json();
+    let title = data.choices[0].message.content.trim();
+    
+    // Remove quotes if the AI added them
+    if ((title.startsWith('"') && title.endsWith('"')) || 
+        (title.startsWith("'") && title.endsWith("'"))) {
+      title = title.substring(1, title.length - 1);
+    }
+    
+    return title;
+  } catch (error) {
+    console.error('Error generating chat title:', error);
+    return '';
+  }
+};
+
 export const simulateStreamingResponse = (
-  message: string, 
-  onChunk: (chunk: string) => void, 
+  text: string,
+  onChunk: (chunk: string) => void,
   onComplete: () => void
-) => {
+): (() => void) => {
+  let isCancelled = false;
   let currentIndex = 0;
-  const delay = 15; // миллисекунды между символами
+  const textLength = text.length;
   
-  // Разделяем сообщение на слова и добавляем задержку для каждого слова
-  const messageArray = message.split('');
-  
-  const interval = setInterval(() => {
-    if (currentIndex < messageArray.length) {
-      onChunk(messageArray[currentIndex]);
-      currentIndex++;
+  // Create chunks of text for realistic streaming
+  const simulateTokenStream = () => {
+    if (isCancelled) return;
+    
+    // Calculate a variable chunk size between 1-4 characters
+    const chunkSize = Math.floor(Math.random() * 4) + 1;
+    const endIndex = Math.min(currentIndex + chunkSize, textLength);
+    
+    if (currentIndex < textLength) {
+      const chunk = text.substring(currentIndex, endIndex);
+      onChunk(chunk);
+      currentIndex = endIndex;
+      
+      // Randomly vary the typing speed
+      const nextDelay = Math.floor(Math.random() * 30) + 10; // 10-40ms
+      setTimeout(simulateTokenStream, nextDelay);
     } else {
-      clearInterval(interval);
       onComplete();
     }
-  }, delay);
+  };
   
-  // Возвращаем функцию для остановки анимации при необходимости
-  return () => clearInterval(interval);
+  // Start streaming with a small initial delay
+  setTimeout(simulateTokenStream, 200);
+  
+  // Return cancel function
+  return () => {
+    isCancelled = true;
+  };
 };

@@ -5,31 +5,53 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Chat, updateChatTitle, deleteChat } from '@/services/chatService';
-import { MessageSquare, Edit, Trash2, Check, X } from 'lucide-react';
+import { MessageSquare, Edit, Trash2, Check, X, Plus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface ChatSidebarProps {
   chats: Chat[];
   currentChatId: string | null;
   onChatSelect: (chatId: string) => void;
+  onNewChat: () => void;
   onChatUpdated: () => void;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  language: 'ru' | 'en';
 }
 
 const ChatSidebar: React.FC<ChatSidebarProps> = ({ 
   chats, 
   currentChatId, 
   onChatSelect, 
+  onNewChat,
   onChatUpdated,
   isOpen,
-  onOpenChange
+  onOpenChange,
+  language
 }) => {
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [chatToDelete, setChatToDelete] = useState<Chat | null>(null);
   const { toast } = useToast();
+
+  const texts = {
+    chatHistory: language === 'ru' ? 'История чатов' : 'Chat History',
+    noChats: language === 'ru' ? 'Нет сохраненных чатов' : 'No saved chats',
+    newChat: language === 'ru' ? 'Новый чат' : 'New Chat',
+    deleteChat: language === 'ru' ? 'Удалить чат' : 'Delete Chat',
+    deleteConfirm: language === 'ru' 
+      ? 'Вы уверены, что хотите удалить чат? Это действие нельзя отменить.' 
+      : 'Are you sure you want to delete this chat? This action cannot be undone.',
+    cancel: language === 'ru' ? 'Отмена' : 'Cancel',
+    delete: language === 'ru' ? 'Удалить' : 'Delete',
+    success: language === 'ru' ? 'Успешно' : 'Success',
+    error: language === 'ru' ? 'Ошибка' : 'Error',
+    chatUpdated: language === 'ru' ? 'Название чата обновлено' : 'Chat title updated',
+    chatUpdateError: language === 'ru' ? 'Не удалось обновить название чата' : 'Failed to update chat title',
+    chatDeleted: language === 'ru' ? 'Чат удален' : 'Chat deleted',
+    chatDeleteError: language === 'ru' ? 'Не удалось удалить чат' : 'Failed to delete chat',
+  };
 
   const handleEdit = (chat: Chat, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -45,14 +67,14 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
         setEditingChatId(null);
         onChatUpdated();
         toast({
-          title: "Успешно",
-          description: "Название чата обновлено",
+          title: texts.success,
+          description: texts.chatUpdated,
         });
       } catch (error) {
         console.error('Error updating chat title:', error);
         toast({
-          title: "Ошибка",
-          description: "Не удалось обновить название чата",
+          title: texts.error,
+          description: texts.chatUpdateError,
           variant: "destructive",
         });
       }
@@ -78,14 +100,14 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
         setChatToDelete(null);
         onChatUpdated();
         toast({
-          title: "Успешно",
-          description: "Чат удален",
+          title: texts.success,
+          description: texts.chatDeleted,
         });
       } catch (error) {
         console.error('Error deleting chat:', error);
         toast({
-          title: "Ошибка",
-          description: "Не удалось удалить чат",
+          title: texts.error,
+          description: texts.chatDeleteError,
           variant: "destructive",
         });
       }
@@ -98,12 +120,21 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
         <SheetContent side="left" className="w-[300px] sm:w-[350px] p-0">
           <div className="flex flex-col h-full">
             <div className="p-4 border-b">
-              <h2 className="text-lg font-semibold">История чатов</h2>
+              <h2 className="text-lg font-semibold">{texts.chatHistory}</h2>
             </div>
             <div className="flex-1 overflow-y-auto p-2">
+              <Button 
+                variant="outline" 
+                className="w-full mb-2 flex items-center justify-center gap-2"
+                onClick={onNewChat}
+              >
+                <Plus className="h-4 w-4" />
+                {texts.newChat}
+              </Button>
+            
               {chats.length === 0 ? (
                 <div className="text-center text-muted-foreground p-4">
-                  Нет сохраненных чатов
+                  {texts.noChats}
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -181,17 +212,17 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Удалить чат</DialogTitle>
+            <DialogTitle>{texts.deleteChat}</DialogTitle>
             <DialogDescription>
-              Вы уверены, что хотите удалить чат "{chatToDelete?.title}"? Это действие нельзя отменить.
+              {texts.deleteConfirm}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Отмена
+              {texts.cancel}
             </Button>
             <Button variant="destructive" onClick={handleConfirmDelete}>
-              Удалить
+              {texts.delete}
             </Button>
           </DialogFooter>
         </DialogContent>

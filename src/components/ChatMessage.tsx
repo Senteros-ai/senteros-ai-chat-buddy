@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { Avatar } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ReactMarkdown from 'react-markdown';
 import { simulateStreamingResponse } from '@/services/openRouterService';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ChatMessageProps {
   message: {
@@ -19,6 +20,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLast, animateLastM
   const [displayedContent, setDisplayedContent] = useState<string>(isUser ? message.content : '');
   const [isAnimating, setIsAnimating] = useState(false);
   const animationRef = useRef<() => void | null>(null);
+  const { user } = useAuth();
   
   // Запускаем анимацию только для последнего сообщения от ассистента
   useEffect(() => {
@@ -59,27 +61,33 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLast, animateLastM
           isUser ? "bg-chat-user-bubble" : "bg-chat-bot-bubble"
         )}>
           {isUser ? (
-            <span className="text-white text-sm">U</span>
+            user?.user_metadata?.avatar_url ? (
+              <AvatarImage src={user.user_metadata.avatar_url} alt="User" />
+            ) : (
+              <AvatarFallback className="text-white text-sm">
+                {user?.user_metadata?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+              </AvatarFallback>
+            )
           ) : (
-            <img src="https://i.ibb.co/xKtY6RXz/Chat-GPT-Image-1-2025-17-16-51.png" alt="SenterosAI" className="h-full w-full object-cover" />
+            <AvatarImage src="https://i.ibb.co/xKtY6RXz/Chat-GPT-Image-1-2025-17-16-51.png" alt="SenterosAI" className="h-full w-full object-contain bg-transparent" />
           )}
         </Avatar>
         
         <div className="flex-1 space-y-2 overflow-hidden">
           <div className="font-semibold">
-            {isUser ? 'You' : 'SenterosAI'}
+            {isUser ? (user?.user_metadata?.username || 'You') : 'SenterosAI'}
           </div>
           
           <div className="message-content">
             {isUser ? (
               <div>{message.content}</div>
             ) : (
-              <>
+              <div className="relative">
                 <ReactMarkdown className="prose dark:prose-invert prose-headings:my-4 prose-p:my-2 max-w-none">
                   {displayedContent}
                 </ReactMarkdown>
-                {isAnimating && <span className="animate-pulse">▌</span>}
-              </>
+                {isAnimating && <span className="animate-pulse inline-block ml-1">▌</span>}
+              </div>
             )}
           </div>
         </div>

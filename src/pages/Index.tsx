@@ -8,7 +8,8 @@ import ChatSidebar from '@/components/ChatSidebar';
 import SettingsDialog from '@/components/SettingsDialog';
 import { 
   generateChatCompletion, 
-  ChatMessage as ChatMessageType
+  ChatMessage as ChatMessageType,
+  generateChatTitle
 } from '@/services/openRouterService';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -16,7 +17,8 @@ import {
   fetchChatMessages, 
   createChat, 
   saveChatMessage, 
-  Chat 
+  Chat,
+  updateChatTitle
 } from '@/services/chatService';
 
 const Index = () => {
@@ -27,9 +29,37 @@ const Index = () => {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [animateLastMessage, setAnimateLastMessage] = useState(false);
+  const [language, setLanguage] = useState<'ru' | 'en'>('ru');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Load language setting
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('language') as 'ru' | 'en' || 'ru';
+    setLanguage(savedLanguage);
+  }, []);
+
+  // Apply theme from localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    
+    if (savedTheme === 'system') {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.classList.toggle('dark', systemTheme === 'dark');
+      
+      // Listen for system theme changes
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = (e: MediaQueryListEvent) => {
+        document.documentElement.classList.toggle('dark', e.matches);
+      };
+      
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    } else {
+      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+    }
+  }, []);
 
   // Load user chats
   useEffect(() => {
@@ -64,8 +94,10 @@ const Index = () => {
     } catch (error) {
       console.error('Error loading chats:', error);
       toast({
-        title: 'Ошибка',
-        description: 'Не удалось загрузить историю чатов',
+        title: language === 'ru' ? 'Ошибка' : 'Error',
+        description: language === 'ru' 
+          ? 'Не удалось загрузить историю чатов' 
+          : 'Failed to load chat history',
         variant: 'destructive',
       });
     }
@@ -79,8 +111,10 @@ const Index = () => {
     } catch (error) {
       console.error('Error loading chat messages:', error);
       toast({
-        title: 'Ошибка',
-        description: 'Не удалось загрузить сообщения чата',
+        title: language === 'ru' ? 'Ошибка' : 'Error',
+        description: language === 'ru' 
+          ? 'Не удалось загрузить сообщения чата' 
+          : 'Failed to load chat messages',
         variant: 'destructive',
       });
     }
@@ -88,6 +122,21 @@ const Index = () => {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const generateAITitle = async (chatId: string, messages: ChatMessageType[]) => {
+    try {
+      if (messages.length >= 2) { // Need at least one user message and one AI response
+        const title = await generateChatTitle(messages);
+        if (title) {
+          await updateChatTitle(chatId, title);
+          loadUserChats(); // Refresh the chat list to show the new title
+        }
+      }
+    } catch (error) {
+      console.error('Error generating chat title:', error);
+      // Silent fail - don't show toast for this
+    }
   };
 
   const handleSendMessage = async (content: string) => {
@@ -103,33 +152,43 @@ const Index = () => {
     setIsLoading(true);
 
     try {
-      // If no current chat, create a new one
-      if (!currentChatId) {
-        const newChat = await createChat(
-          content.substring(0, 30) + (content.length > 30 ? '...' : ''),
-          userMessage
-        );
-        setCurrentChatId(newChat.id);
+      let chatId = currentChatId;
+      let isNewChat = false;
+      
+      // If no current chat, create a new one with a temporary title
+      if (!chatId) {
+        const tempTitle = content.substring(0, 30) + (content.length > 30 ? '...' : '');
+        const newChat = await createChat(tempTitle, userMessage);
+        chatId = newChat.id;
+        setCurrentChatId(chatId);
         setChats(prev => [newChat, ...prev]);
+        isNewChat = true;
       } else {
         // Save user message to existing chat
-        await saveChatMessage(currentChatId, userMessage);
+        await saveChatMessage(chatId, userMessage);
       }
 
       const assistantMessage = await generateChatCompletion(updatedMessages);
       
       // Save assistant message
-      if (currentChatId) {
-        await saveChatMessage(currentChatId, assistantMessage);
+      if (chatId) {
+        await saveChatMessage(chatId, assistantMessage);
       }
 
+      updatedMessages = [...updatedMessages, assistantMessage];
       setAnimateLastMessage(true); // Включаем анимацию для нового сообщения
-      setMessages([...updatedMessages, assistantMessage]);
+      setMessages(updatedMessages);
+      
+      // For new chats or chats with default title, generate AI title
+      if (isNewChat) {
+        generateAITitle(chatId, updatedMessages);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
-        title: 'Ошибка',
-        description: error instanceof Error ? error.message : 'Не удалось получить ответ',
+        title: language === 'ru' ? 'Ошибка' : 'Error',
+        description: error instanceof Error ? error.message : 
+          (language === 'ru' ? 'Не удалось получить ответ' : 'Failed to get response'),
         variant: 'destructive',
       });
     } finally {
@@ -138,9 +197,10 @@ const Index = () => {
   };
 
   const handleNewChat = () => {
-    if (messages.length > 0) {
+    if (currentChatId !== null) {
       setCurrentChatId(null);
       setMessages([]);
+      setSidebarOpen(false);
     }
   };
 
@@ -153,15 +213,24 @@ const Index = () => {
     loadUserChats();
   };
 
+  const texts = {
+    welcome: language === 'ru' ? 'Привет! Я SenterosAI' : 'Hello! I am SenterosAI',
+    description: language === 'ru' 
+      ? 'Я супер-дружелюбный и полезный ассистент, готовый помочь вам с любыми вопросами! (●\'◡\'●)' 
+      : 'I am a super-friendly and helpful assistant, ready to help you with any questions! (●\'◡\'●)'
+  };
+
   return (
     <div className="flex h-screen">
       <ChatSidebar 
         chats={chats}
         currentChatId={currentChatId}
         onChatSelect={handleChatSelect}
+        onNewChat={handleNewChat}
         onChatUpdated={handleChatUpdated}
         isOpen={sidebarOpen}
         onOpenChange={setSidebarOpen}
+        language={language}
       />
       
       <div className="flex flex-col h-screen w-full">
@@ -178,11 +247,11 @@ const Index = () => {
                 <img
                   src="https://i.ibb.co/xKtY6RXz/Chat-GPT-Image-1-2025-17-16-51.png"
                   alt="SenterosAI"
-                  className="w-20 h-20 mx-auto animate-bounce-slight"
+                  className="w-20 h-20 mx-auto animate-bounce-slight bg-transparent"
                 />
-                <h2 className="text-2xl font-bold">Привет! Я SenterosAI</h2>
+                <h2 className="text-2xl font-bold">{texts.welcome}</h2>
                 <p className="text-muted-foreground">
-                  Я супер-дружелюбный и полезный ассистент, готовый помочь вам с любыми вопросами! (●'◡'●)
+                  {texts.description}
                 </p>
               </div>
             </div>

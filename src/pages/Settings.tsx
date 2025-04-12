@@ -3,11 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Upload, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { supabase } from '@/integrations/supabase/client';
 
 type Language = 'ru' | 'en';
 type Theme = 'light' | 'dark' | 'system';
@@ -15,17 +18,25 @@ type Theme = 'light' | 'dark' | 'system';
 const Settings = () => {
   const [language, setLanguage] = useState<Language>('ru');
   const [theme, setTheme] = useState<Theme>('system');
+  const [username, setUsername] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
-  // Load settings from localStorage on mount
+  // Load settings from localStorage and user profile
   useEffect(() => {
     const savedLanguage = (localStorage.getItem('language') as Language) || 'ru';
     const savedTheme = (localStorage.getItem('theme') as Theme) || 'system';
 
     setLanguage(savedLanguage);
     setTheme(savedTheme);
-  }, []);
+    
+    if (user) {
+      setUsername(user.user_metadata?.username || '');
+      setAvatarUrl(user.user_metadata?.avatar_url || null);
+    }
+  }, [user]);
 
   // Apply theme when it changes
   useEffect(() => {
@@ -49,6 +60,79 @@ const Settings = () => {
     });
   };
 
+  const handleUpdateProfile = async () => {
+    try {
+      if (!user) return;
+      
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          username: username,
+          avatar_url: avatarUrl
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: language === 'ru' ? "Профиль обновлен" : "Profile updated",
+        description: language === 'ru' 
+          ? "Ваш профиль был успешно обновлен" 
+          : "Your profile has been successfully updated",
+      });
+    } catch (error: any) {
+      toast({
+        title: language === 'ru' ? "Ошибка" : "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      if (!event.target.files || event.target.files.length === 0) {
+        return;
+      }
+      
+      const file = event.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user?.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      
+      setIsUploading(true);
+      
+      // Check if avatars bucket exists, if not create it
+      const { data: buckets } = await supabase.storage.listBuckets();
+      if (!buckets?.find(bucket => bucket.name === 'avatars')) {
+        await supabase.storage.createBucket('avatars', { public: true });
+      }
+      
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+        
+      if (uploadError) throw uploadError;
+      
+      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      
+      setAvatarUrl(data.publicUrl);
+      
+      toast({
+        title: language === 'ru' ? "Аватар загружен" : "Avatar uploaded",
+        description: language === 'ru' 
+          ? "Не забудьте сохранить изменения" 
+          : "Don't forget to save changes",
+      });
+    } catch (error: any) {
+      toast({
+        title: language === 'ru' ? "Ошибка загрузки" : "Upload error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -60,7 +144,7 @@ const Settings = () => {
   // Локализованные тексты
   const texts = {
     settings: language === 'ru' ? 'Настройки' : 'Settings',
-    appSettings: language === 'ru' ? 'Настройки приложения' : 'Application Settings',
+    appearance: language === 'ru' ? 'Внешний вид' : 'Appearance',
     configureApp: language === 'ru' 
       ? 'Настройте язык и тему приложения' 
       : 'Configure language and theme of the application',
@@ -72,6 +156,13 @@ const Settings = () => {
     dark: language === 'ru' ? 'Темная' : 'Dark',
     system: language === 'ru' ? 'Системная' : 'System',
     saveSettings: language === 'ru' ? 'Сохранить настройки' : 'Save settings',
+    profile: language === 'ru' ? 'Профиль' : 'Profile',
+    manageProfile: language === 'ru' ? 'Управление профилем' : 'Manage your profile',
+    username: language === 'ru' ? 'Имя пользователя' : 'Username',
+    enterUsername: language === 'ru' ? 'Введите имя пользователя' : 'Enter username',
+    avatar: language === 'ru' ? 'Аватар' : 'Avatar',
+    uploadAvatar: language === 'ru' ? 'Загрузить аватар' : 'Upload avatar',
+    updateProfile: language === 'ru' ? 'Обновить профиль' : 'Update profile',
     account: language === 'ru' ? 'Аккаунт' : 'Account',
     manageAccount: language === 'ru' ? 'Управление вашим аккаунтом' : 'Manage your account',
     signOut: language === 'ru' ? 'Выйти из аккаунта' : 'Sign out',
@@ -90,7 +181,54 @@ const Settings = () => {
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>{texts.appSettings}</CardTitle>
+          <CardTitle>{texts.profile}</CardTitle>
+          <CardDescription>
+            {texts.manageProfile}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col items-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
+            <div className="relative">
+              <Avatar className="h-24 w-24">
+                {avatarUrl ? (
+                  <AvatarImage src={avatarUrl} alt={username} />
+                ) : (
+                  <AvatarFallback className="text-2xl">
+                    {username ? username.charAt(0).toUpperCase() : <User />}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <label htmlFor="avatar-upload" className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-1 rounded-full cursor-pointer">
+                <Upload className="h-4 w-4" />
+                <input 
+                  id="avatar-upload" 
+                  type="file" 
+                  className="hidden" 
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  disabled={isUploading}
+                />
+              </label>
+            </div>
+            <div className="flex-1 space-y-2 w-full">
+              <Label htmlFor="username">{texts.username}</Label>
+              <Input 
+                id="username" 
+                value={username} 
+                onChange={(e) => setUsername(e.target.value)} 
+                placeholder={texts.enterUsername}
+              />
+            </div>
+          </div>
+          <Button onClick={handleUpdateProfile} className="w-full" disabled={isUploading}>
+            {texts.updateProfile}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>{texts.appearance}</CardTitle>
           <CardDescription>
             {texts.configureApp}
           </CardDescription>
