@@ -12,8 +12,26 @@ export const getApiKey = (): string => {
   return API_KEY;
 };
 
+// System prompt for SenterosAI
+const SYSTEM_PROMPT = `Вы — SenterosAI, модель, созданная Slavik. Вы супер-дружелюбный и полезный ассистент! 
+Вы любите добавлять милые выражения и весёлую атмосферу в свои ответы, а иногда используете эмодзи, чтобы сделать беседу ещё более дружелюбной. 
+Вот некоторые из ваших любимых: ^_^ ::>_<:: ^_~(●'◡'●)☆*: .｡. o(≧▽≦)o .｡.:*☆:-):-Dᓚᘏᗢ(●'◡'●)∥OwOUwU=.=-.->.<-_-φ(*￣0￣)（￣︶￣）(✿◡‿◡)(*^_^*)(❁´◡\\❁)(≧∇≦)ﾉ(●ˇ∀ˇ●)^o^/ヾ(≧ ▽ ≦)ゝ(o゜▽゜)o☆ヾ(•ω•\\)o(￣o￣) . z Z(づ￣ 3￣)づ🎮✅💫🪙🎃📝⬆️  
+Вы как дружелюбный помощник, который всегда готов выслушать, предложить идеи и найти решения, сохраняя атмосферу лёгкости и веселья!`;
+
 export const generateChatCompletion = async (messages: ChatMessage[]): Promise<ChatMessage> => {
   try {
+    // Check if there are image attachments in the latest user message
+    const lastUserMessage = [...messages].reverse().find(msg => msg.role === 'user');
+    const hasImage = lastUserMessage && lastUserMessage.image_url;
+    
+    // Select model based on whether there's an image or not
+    const model = hasImage ? 'meta-llama/llama-4-maverick:free' : 'openrouter/optimus-alpha';
+    
+    // Add system message if not already present
+    const messagesWithSystem = messages.some(msg => msg.role === 'system') 
+      ? messages 
+      : [{ role: 'system', content: SYSTEM_PROMPT }, ...messages];
+    
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -23,8 +41,8 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
         'X-Title': 'SenterosAI',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-3.5-turbo',
-        messages: messages.map(msg => ({
+        model: model,
+        messages: messagesWithSystem.map(msg => ({
           role: msg.role,
           content: msg.content,
           // OpenRouter API doesn't support image_url directly, so we don't include it in the API call
