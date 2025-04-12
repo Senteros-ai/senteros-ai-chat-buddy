@@ -20,31 +20,32 @@ const Settings = () => {
 
   // Load settings from localStorage on mount
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('language') as Language;
-    const savedTheme = localStorage.getItem('theme') as Theme;
+    const savedLanguage = (localStorage.getItem('language') as Language) || 'ru';
+    const savedTheme = (localStorage.getItem('theme') as Theme) || 'system';
 
-    if (savedLanguage) setLanguage(savedLanguage);
-    if (savedTheme) setTheme(savedTheme);
+    setLanguage(savedLanguage);
+    setTheme(savedTheme);
   }, []);
 
-  // Save settings to localStorage when they change
+  // Apply theme when it changes
   useEffect(() => {
-    localStorage.setItem('language', language);
-    localStorage.setItem('theme', theme);
-    
-    // Apply theme
     if (theme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       document.documentElement.classList.toggle('dark', systemTheme === 'dark');
     } else {
       document.documentElement.classList.toggle('dark', theme === 'dark');
     }
-  }, [language, theme]);
+  }, [theme]);
 
   const handleSaveSettings = () => {
+    localStorage.setItem('language', language);
+    localStorage.setItem('theme', theme);
+    
     toast({
-      title: "Настройки сохранены",
-      description: "Ваши настройки были успешно сохранены",
+      title: language === 'ru' ? "Настройки сохранены" : "Settings saved",
+      description: language === 'ru' 
+        ? "Ваши настройки были успешно сохранены" 
+        : "Your settings have been successfully saved",
     });
   };
 
@@ -56,6 +57,26 @@ const Settings = () => {
     }
   };
 
+  // Локализованные тексты
+  const texts = {
+    settings: language === 'ru' ? 'Настройки' : 'Settings',
+    appSettings: language === 'ru' ? 'Настройки приложения' : 'Application Settings',
+    configureApp: language === 'ru' 
+      ? 'Настройте язык и тему приложения' 
+      : 'Configure language and theme of the application',
+    language: language === 'ru' ? 'Язык' : 'Language',
+    selectLanguage: language === 'ru' ? 'Выберите язык' : 'Select language',
+    theme: language === 'ru' ? 'Тема' : 'Theme',
+    selectTheme: language === 'ru' ? 'Выберите тему' : 'Select theme',
+    light: language === 'ru' ? 'Светлая' : 'Light',
+    dark: language === 'ru' ? 'Темная' : 'Dark',
+    system: language === 'ru' ? 'Системная' : 'System',
+    saveSettings: language === 'ru' ? 'Сохранить настройки' : 'Save settings',
+    account: language === 'ru' ? 'Аккаунт' : 'Account',
+    manageAccount: language === 'ru' ? 'Управление вашим аккаунтом' : 'Manage your account',
+    signOut: language === 'ru' ? 'Выйти из аккаунта' : 'Sign out',
+  };
+
   return (
     <div className="container mx-auto max-w-2xl py-8">
       <div className="flex items-center mb-6">
@@ -64,22 +85,22 @@ const Settings = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
-        <h1 className="text-2xl font-bold">Настройки</h1>
+        <h1 className="text-2xl font-bold">{texts.settings}</h1>
       </div>
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Настройки приложения</CardTitle>
+          <CardTitle>{texts.appSettings}</CardTitle>
           <CardDescription>
-            Настройте язык и тему приложения
+            {texts.configureApp}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="language">Язык</Label>
+            <Label htmlFor="language">{texts.language}</Label>
             <Select value={language} onValueChange={(value) => setLanguage(value as Language)}>
               <SelectTrigger id="language">
-                <SelectValue placeholder="Выберите язык" />
+                <SelectValue placeholder={texts.selectLanguage} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ru">Русский</SelectItem>
@@ -88,34 +109,34 @@ const Settings = () => {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="theme">Тема</Label>
+            <Label htmlFor="theme">{texts.theme}</Label>
             <Select value={theme} onValueChange={(value) => setTheme(value as Theme)}>
               <SelectTrigger id="theme">
-                <SelectValue placeholder="Выберите тему" />
+                <SelectValue placeholder={texts.selectTheme} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="light">Светлая</SelectItem>
-                <SelectItem value="dark">Темная</SelectItem>
-                <SelectItem value="system">Системная</SelectItem>
+                <SelectItem value="light">{texts.light}</SelectItem>
+                <SelectItem value="dark">{texts.dark}</SelectItem>
+                <SelectItem value="system">{texts.system}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <Button onClick={handleSaveSettings} className="w-full">
-            Сохранить настройки
+            {texts.saveSettings}
           </Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Аккаунт</CardTitle>
+          <CardTitle>{texts.account}</CardTitle>
           <CardDescription>
-            Управление вашим аккаунтом
+            {texts.manageAccount}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Button onClick={handleSignOut} variant="destructive" className="w-full">
-            Выйти из аккаунта
+            {texts.signOut}
           </Button>
         </CardContent>
       </Card>

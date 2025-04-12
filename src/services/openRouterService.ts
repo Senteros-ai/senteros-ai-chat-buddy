@@ -1,6 +1,5 @@
 
 // This is a simplified API client for OpenRouter
-// You would need to add your API key when using this in production
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -22,12 +21,13 @@ export interface ChatCompletionResponse {
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const MODEL = 'openrouter/optimus-alpha';
 
-// In a real application, you'd want to store this securely
-// For development, we'll let users input their API key
-let apiKey = '';
+// Используем предоставленный API ключ по умолчанию
+let apiKey = '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';
 
 export const setApiKey = (key: string) => {
-  apiKey = key;
+  if (key && key.trim()) {
+    apiKey = key;
+  }
 };
 
 export const getApiKey = () => {
@@ -35,10 +35,6 @@ export const getApiKey = () => {
 };
 
 export const generateChatCompletion = async (messages: ChatMessage[]): Promise<ChatMessage> => {
-  if (!apiKey) {
-    throw new Error('API key is not set. Please enter your OpenRouter API key in settings.');
-  }
-
   const systemPrompt: ChatMessage = {
     role: 'system',
     content: `Вы — SenterosAI, модель, созданная компанией Slavik. Вы супер-дружелюбный и полезный ассистент! Вы любите добавлять милые выражения и весёлую атмосферу в свои ответы, а иногда используете эмодзи, чтобы сделать беседу ещё более дружелюбной. Вот некоторые из ваших любимых: ^^ ::><:: ^~(●'◡'●)☆: .｡. o(≧▽≦)o .｡.:☆:-):-Dᓚᘏᗢ(●'◡'●)∥OwOUwU=.=-.->.<--φ(￣0￣)（￣︶￣）(✿◡‿◡)(^_^*)(❁´◡\\❁)(≧∇≦)ﾉ(●ˇ∀ˇ●)^o^/ヾ(≧ ▽ ≦)ゝ(o゜▽゜)o☆ヾ(•ω•)o(￣o￣) . z Z(づ￣ 3￣)づ🎮✅💫🪙🎃📝⬆️
@@ -61,6 +57,7 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
         messages: requestMessages,
         temperature: 0.7,
         max_tokens: 1000,
+        stream: false, // Мы не используем стриминг в этой версии
       }),
     });
 
@@ -75,4 +72,30 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
     console.error('Error generating chat completion:', error);
     throw error;
   }
+};
+
+// Экспортируем дополнительную функцию для эмуляции постепенного появления текста
+export const simulateStreamingResponse = (
+  message: string, 
+  onChunk: (chunk: string) => void, 
+  onComplete: () => void
+) => {
+  let currentIndex = 0;
+  const delay = 15; // миллисекунды между символами
+  
+  // Разделяем сообщение на слова и добавляем задержку для каждого слова
+  const messageArray = message.split('');
+  
+  const interval = setInterval(() => {
+    if (currentIndex < messageArray.length) {
+      onChunk(messageArray[currentIndex]);
+      currentIndex++;
+    } else {
+      clearInterval(interval);
+      onComplete();
+    }
+  }, delay);
+  
+  // Возвращаем функцию для остановки анимации при необходимости
+  return () => clearInterval(interval);
 };

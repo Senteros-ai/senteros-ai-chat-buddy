@@ -84,8 +84,10 @@ export const fetchChatMessages = async (chatId: string): Promise<ChatMessage[]> 
     .order('timestamp', { ascending: true });
   
   if (error) throw error;
+  
+  // Явно приводим role к нужному типу
   return data?.map(message => ({
-    role: message.role,
+    role: message.role as "user" | "assistant" | "system",
     content: message.content,
   })) || [];
 };

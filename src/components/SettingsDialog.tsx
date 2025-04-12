@@ -1,7 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -11,7 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { setApiKey, getApiKey } from '@/services/openRouterService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getApiKey } from '@/services/openRouterService';
+import { useToast } from '@/components/ui/use-toast';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -19,43 +20,100 @@ interface SettingsDialogProps {
 }
 
 const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange }) => {
-  const [apiKey, setApiKeyLocal] = useState(getApiKey());
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
+  const [language, setLanguage] = useState<'ru' | 'en'>('ru');
+  const { toast } = useToast();
 
-  const handleSave = () => {
-    setApiKey(apiKey);
-    localStorage.setItem('openrouter_api_key', apiKey);
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'system' || 'system';
+    const savedLanguage = localStorage.getItem('language') as 'ru' | 'en' || 'ru';
+    
+    setTheme(savedTheme);
+    setLanguage(savedLanguage);
+  }, []);
+
+  const handleSaveSettings = () => {
+    localStorage.setItem('theme', theme);
+    localStorage.setItem('language', language);
+    
+    // Применить тему
+    applyTheme(theme);
+    
+    toast({
+      title: language === 'ru' ? 'Настройки сохранены' : 'Settings saved',
+      description: language === 'ru' 
+        ? 'Ваши настройки были успешно сохранены' 
+        : 'Your settings have been successfully saved',
+    });
+    
     onOpenChange(false);
+  };
+
+  const applyTheme = (selectedTheme: string) => {
+    if (selectedTheme === 'system') {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.classList.toggle('dark', systemTheme === 'dark');
+    } else {
+      document.documentElement.classList.toggle('dark', selectedTheme === 'dark');
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
+          <DialogTitle>
+            {language === 'ru' ? 'Настройки' : 'Settings'}
+          </DialogTitle>
           <DialogDescription>
-            Configure your SenterosAI experience
+            {language === 'ru' 
+              ? 'Настройте свой опыт использования SenterosAI' 
+              : 'Configure your SenterosAI experience'}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="apiKey" className="col-span-4">
-              OpenRouter API Key
+            <Label htmlFor="theme" className="col-span-4">
+              {language === 'ru' ? 'Тема' : 'Theme'}
             </Label>
-            <Input
-              id="apiKey"
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKeyLocal(e.target.value)}
-              placeholder="Enter your OpenRouter API key"
-              className="col-span-4"
-            />
-            <div className="col-span-4 text-xs text-muted-foreground">
-              Get your API key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-primary underline">openrouter.ai/keys</a>
-            </div>
+            <Select value={theme} onValueChange={(value) => setTheme(value as 'light' | 'dark' | 'system')}>
+              <SelectTrigger id="theme" className="col-span-4">
+                <SelectValue placeholder={language === 'ru' ? 'Выберите тему' : 'Select theme'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="light">{language === 'ru' ? 'Светлая' : 'Light'}</SelectItem>
+                <SelectItem value="dark">{language === 'ru' ? 'Темная' : 'Dark'}</SelectItem>
+                <SelectItem value="system">{language === 'ru' ? 'Системная' : 'System'}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="language" className="col-span-4">
+              {language === 'ru' ? 'Язык' : 'Language'}
+            </Label>
+            <Select value={language} onValueChange={(value) => setLanguage(value as 'ru' | 'en')}>
+              <SelectTrigger id="language" className="col-span-4">
+                <SelectValue placeholder={language === 'ru' ? 'Выберите язык' : 'Select language'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ru">Русский</SelectItem>
+                <SelectItem value="en">English</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="col-span-4 text-xs text-muted-foreground">
+            {language === 'ru' 
+              ? 'API ключ установлен автоматически' 
+              : 'API key is set automatically'}
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={handleSave}>Save changes</Button>
+          <Button onClick={handleSaveSettings}>
+            {language === 'ru' ? 'Сохранить изменения' : 'Save changes'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -4,12 +4,10 @@ import { useToast } from "@/components/ui/use-toast";
 import ChatHeader from '@/components/ChatHeader';
 import ChatMessage from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
-import TypingIndicator from '@/components/TypingIndicator';
-import SettingsDialog from '@/components/SettingsDialog';
 import ChatSidebar from '@/components/ChatSidebar';
+import SettingsDialog from '@/components/SettingsDialog';
 import { 
   generateChatCompletion, 
-  setApiKey,
   ChatMessage as ChatMessageType
 } from '@/services/openRouterService';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,20 +26,10 @@ const Index = () => {
   const [chats, setChats] = useState<Chat[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [animateLastMessage, setAnimateLastMessage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
-
-  // Load saved API key on mount
-  useEffect(() => {
-    const savedApiKey = localStorage.getItem('openrouter_api_key');
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
-    } else {
-      // If no API key is found, open settings dialog
-      setSettingsOpen(true);
-    }
-  }, []);
 
   // Load user chats
   useEffect(() => {
@@ -87,6 +75,7 @@ const Index = () => {
     try {
       const chatMessages = await fetchChatMessages(chatId);
       setMessages(chatMessages);
+      setAnimateLastMessage(false); // Не анимируем при загрузке истории
     } catch (error) {
       console.error('Error loading chat messages:', error);
       toast({
@@ -134,6 +123,7 @@ const Index = () => {
         await saveChatMessage(currentChatId, assistantMessage);
       }
 
+      setAnimateLastMessage(true); // Включаем анимацию для нового сообщения
       setMessages([...updatedMessages, assistantMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
@@ -203,20 +193,9 @@ const Index = () => {
                   key={index} 
                   message={message} 
                   isLast={index === messages.length - 1} 
+                  animateLastMessage={index === messages.length - 1 && animateLastMessage}
                 />
               ))}
-              {isLoading && (
-                <div className="flex w-full py-4 px-4 md:px-8 bg-background">
-                  <div className="flex w-full max-w-screen-lg mx-auto space-x-4">
-                    <div className="h-8 w-8 rounded-md shrink-0 bg-chat-bot-bubble flex items-center justify-center">
-                      <img src="https://i.ibb.co/xKtY6RXz/Chat-GPT-Image-1-2025-17-16-51.png" alt="SenterosAI" className="h-full w-full object-cover" />
-                    </div>
-                    <div className="flex-1 pt-1">
-                      <TypingIndicator />
-                    </div>
-                  </div>
-                </div>
-              )}
               <div ref={messagesEndRef} />
             </div>
           )}
