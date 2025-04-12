@@ -10,6 +10,7 @@ interface ChatMessageProps {
   message: {
     role: 'user' | 'assistant' | 'system';
     content: string;
+    image_url?: string;
   };
   isLast?: boolean;
   animateLastMessage?: boolean;
@@ -19,7 +20,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLast, animateLastM
   const isUser = message.role === 'user';
   const [displayedContent, setDisplayedContent] = useState<string>(isUser ? message.content : '');
   const [isAnimating, setIsAnimating] = useState(false);
-  const animationRef = useRef<() => void | null>(null);
+  const animationRef = useRef<(() => void) | null>(null);
   const { user } = useAuth();
   
   // Запускаем анимацию только для последнего сообщения от ассистента
@@ -57,7 +58,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLast, animateLastM
     >
       <div className="flex w-full max-w-screen-lg mx-auto space-x-4">
         <Avatar className={cn(
-          "h-8 w-8 rounded-md shrink-0",
+          "h-8 w-8 rounded-full shrink-0", // Changed from rounded-md to rounded-full
           isUser ? "bg-chat-user-bubble" : "bg-chat-bot-bubble"
         )}>
           {isUser ? (
@@ -69,7 +70,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLast, animateLastM
               </AvatarFallback>
             )
           ) : (
-            <AvatarImage src="https://i.ibb.co/xKtY6RXz/Chat-GPT-Image-1-2025-17-16-51.png" alt="SenterosAI" className="h-full w-full object-contain bg-transparent" />
+            <AvatarImage src="https://i.ibb.co/xKtY6RXz/Chat-GPT-Image-1-2025-17-16-51.png" alt="SenterosAI" className="h-full w-full object-contain p-1" />
           )}
         </Avatar>
         
@@ -80,13 +81,20 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLast, animateLastM
           
           <div className="message-content">
             {isUser ? (
-              <div>{message.content}</div>
+              <div>
+                {message.content}
+                {message.image_url && (
+                  <div className="mt-2">
+                    <img src={message.image_url} alt="Attached image" className="max-w-xs rounded-md" />
+                  </div>
+                )}
+              </div>
             ) : (
-              <div className="relative">
-                <ReactMarkdown className="prose dark:prose-invert prose-headings:my-4 prose-p:my-2 max-w-none">
+              <div className="relative prose dark:prose-invert prose-headings:my-4 prose-p:my-2 max-w-none">
+                <ReactMarkdown>
                   {displayedContent}
                 </ReactMarkdown>
-                {isAnimating && <span className="animate-pulse inline-block ml-1">▌</span>}
+                {isAnimating && <span className="animate-pulse inline-block ml-0.5">▌</span>}
               </div>
             )}
           </div>

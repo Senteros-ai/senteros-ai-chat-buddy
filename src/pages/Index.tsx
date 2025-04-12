@@ -139,12 +139,13 @@ const Index = () => {
     }
   };
 
-  const handleSendMessage = async (content: string) => {
-    if (!content.trim()) return;
+  const handleSendMessage = async (content: string, imageUrl?: string) => {
+    if (!content.trim() && !imageUrl) return;
 
     const userMessage: ChatMessageType = {
       role: 'user',
       content,
+      ...(imageUrl && { image_url: imageUrl })
     };
 
     let updatedMessages = [...messages, userMessage];
@@ -236,7 +237,6 @@ const Index = () => {
       <div className="flex flex-col h-screen w-full">
         <ChatHeader 
           onNewChat={handleNewChat}
-          onSettings={() => setSettingsOpen(true)}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         />
         
@@ -271,11 +271,6 @@ const Index = () => {
         </div>
         
         <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} />
-        
-        <SettingsDialog
-          open={settingsOpen}
-          onOpenChange={setSettingsOpen}
-        />
       </div>
     </div>
   );

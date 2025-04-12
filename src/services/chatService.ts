@@ -42,6 +42,7 @@ export const createChat = async (title: string, firstMessage: ChatMessage): Prom
       chat_id: chatData.id,
       role: firstMessage.role,
       content: firstMessage.content,
+      image_url: firstMessage.image_url,
     }]);
   
   if (messageError) throw messageError;
@@ -89,6 +90,7 @@ export const fetchChatMessages = async (chatId: string): Promise<ChatMessage[]> 
   return data?.map(message => ({
     role: message.role as "user" | "assistant" | "system",
     content: message.content,
+    ...(message.image_url && { image_url: message.image_url }),
   })) || [];
 };
 
@@ -99,6 +101,7 @@ export const saveChatMessage = async (chatId: string, message: ChatMessage): Pro
       chat_id: chatId,
       role: message.role,
       content: message.content,
+      image_url: message.image_url,
     }]);
   
   if (error) throw error;

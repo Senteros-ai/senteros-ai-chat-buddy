@@ -1,6 +1,8 @@
+
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  image_url?: string;
 }
 
 // Fixed API key that doesn't require user input
@@ -22,7 +24,11 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
       },
       body: JSON.stringify({
         model: 'openai/gpt-3.5-turbo',
-        messages,
+        messages: messages.map(msg => ({
+          role: msg.role,
+          content: msg.content,
+          // OpenRouter API doesn't support image_url directly, so we don't include it in the API call
+        })),
       }),
     });
 
@@ -32,7 +38,10 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
     }
 
     const data = await response.json();
-    return data.choices[0].message as ChatMessage;
+    return {
+      role: 'assistant',
+      content: data.choices[0].message.content
+    };
   } catch (error) {
     console.error('Error generating chat completion:', error);
     throw error;
@@ -50,7 +59,10 @@ export const generateChatTitle = async (messages: ChatMessage[]): Promise<string
         role: 'system',
         content: 'Generate a short, concise title (3-5 words) for this conversation. Return ONLY the title text without quotes or explanation.'
       },
-      ...limitedMessages
+      ...limitedMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }))
     ];
     
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
