@@ -32,6 +32,23 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
       ? messages 
       : [{ role: 'system', content: SYSTEM_PROMPT }, ...messages];
     
+    // Format messages properly to include image content if available
+    const formattedMessages = messagesWithSystem.map(msg => {
+      if (msg.role === 'user' && msg.image_url) {
+        return {
+          role: msg.role,
+          content: [
+            { type: 'text', text: msg.content },
+            { type: 'image_url', image_url: { url: msg.image_url } }
+          ]
+        };
+      }
+      return {
+        role: msg.role,
+        content: msg.content
+      };
+    });
+    
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -42,11 +59,7 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
       },
       body: JSON.stringify({
         model: model,
-        messages: messagesWithSystem.map(msg => ({
-          role: msg.role,
-          content: msg.content,
-          // OpenRouter API doesn't support image_url directly, so we don't include it in the API call
-        })),
+        messages: formattedMessages,
       }),
     });
 
