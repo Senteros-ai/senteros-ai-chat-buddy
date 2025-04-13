@@ -34,7 +34,8 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
     
     // Format messages properly to include image content if available
     const formattedMessages = messagesWithSystem.map(msg => {
-      if (msg.role === 'user' && msg.image_url) {
+      // Type guard to ensure we're working with ChatMessage type
+      if (msg.role === 'user' && 'image_url' in msg && msg.image_url) {
         return {
           role: msg.role,
           content: [
