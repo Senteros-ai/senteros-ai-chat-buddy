@@ -169,6 +169,15 @@ const Index = () => {
         await saveChatMessage(chatId, userMessage);
       }
 
+      // Добавляем пустое сообщение от ассистента, которое будет заполняться во время анимации
+      const tempAssistantMessage: ChatMessageType = {
+        role: 'assistant',
+        content: ''
+      };
+      
+      setMessages([...updatedMessages, tempAssistantMessage]);
+      setAnimateLastMessage(true); // Включаем анимацию для нового сообщения
+      
       const assistantMessage = await generateChatCompletion(updatedMessages);
       
       // Save assistant message
@@ -176,8 +185,8 @@ const Index = () => {
         await saveChatMessage(chatId, assistantMessage);
       }
 
+      // Обновляем сообщения с полным ответом от ассистента
       updatedMessages = [...updatedMessages, assistantMessage];
-      setAnimateLastMessage(true); // Включаем анимацию для нового сообщения
       setMessages(updatedMessages);
       
       // For new chats or chats with default title, generate AI title

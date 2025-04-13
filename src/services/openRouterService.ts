@@ -1,4 +1,3 @@
-
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -208,8 +207,8 @@ export const simulateStreamingResponse = (
   const simulateTokenStream = () => {
     if (isCancelled) return;
     
-    // Calculate a variable chunk size between 1-4 characters
-    const chunkSize = Math.floor(Math.random() * 4) + 1;
+    // Calculate a variable chunk size between 1-3 characters for more realistic streaming
+    const chunkSize = Math.floor(Math.random() * 3) + 1;
     const endIndex = Math.min(currentIndex + chunkSize, textLength);
     
     if (currentIndex < textLength) {
@@ -217,8 +216,8 @@ export const simulateStreamingResponse = (
       onChunk(chunk);
       currentIndex = endIndex;
       
-      // Randomly vary the typing speed
-      const nextDelay = Math.floor(Math.random() * 30) + 10; // 10-40ms
+      // Randomly vary the typing speed between 10-40ms for more natural typing
+      const nextDelay = Math.floor(Math.random() * 30) + 10;
       setTimeout(simulateTokenStream, nextDelay);
     } else {
       onComplete();
@@ -226,7 +225,7 @@ export const simulateStreamingResponse = (
   };
   
   // Start streaming with a small initial delay
-  setTimeout(simulateTokenStream, 200);
+  setTimeout(simulateTokenStream, 100);
   
   // Return cancel function
   return () => {

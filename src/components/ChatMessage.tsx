@@ -7,6 +7,7 @@ import { simulateStreamingResponse } from '@/services/openRouterService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import TypingIndicator from './TypingIndicator';
 
 interface ChatMessageProps {
   message: {
