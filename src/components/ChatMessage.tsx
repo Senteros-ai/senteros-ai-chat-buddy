@@ -17,6 +17,7 @@ interface ChatMessageProps {
   };
   isLast?: boolean;
   animateLastMessage?: boolean;
+  isThinking?: boolean;
 }
 
 // Add proper type definition for the code component props
@@ -27,7 +28,7 @@ interface CodeProps {
   children: React.ReactNode;
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLast, animateLastMessage }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLast, animateLastMessage, isThinking }) => {
   const isUser = message.role === 'user';
   const [displayedContent, setDisplayedContent] = useState<string>(isUser ? message.content : '');
   const [isAnimating, setIsAnimating] = useState(false);
@@ -102,30 +103,34 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLast, animateLastM
               </div>
             ) : (
               <div className="relative prose dark:prose-invert prose-headings:my-4 prose-p:my-2 max-w-none">
-                <ReactMarkdown
-                  components={{
-                    code: ({ inline, className, children, ...props }: CodeProps) => {
-                      const match = /language-(\w+)/.exec(className || '');
-                      return !inline ? (
-                        <SyntaxHighlighter
-                          style={oneDark}
-                          language={match ? match[1] : undefined}
-                          PreTag="div"
-                          className="rounded-md my-2"
-                          {...props}
-                        >
-                          {String(children).replace(/\n$/, '')}
-                        </SyntaxHighlighter>
-                      ) : (
-                        <code className={className} {...props}>
-                          {children}
-                        </code>
-                      );
-                    }
-                  }}
-                >
-                  {displayedContent}
-                </ReactMarkdown>
+                {isThinking ? (
+                  <TypingIndicator />
+                ) : (
+                  <ReactMarkdown
+                    components={{
+                      code: ({ inline, className, children, ...props }: CodeProps) => {
+                        const match = /language-(\w+)/.exec(className || '');
+                        return !inline ? (
+                          <SyntaxHighlighter
+                            style={oneDark}
+                            language={match ? match[1] : undefined}
+                            PreTag="div"
+                            className="rounded-md my-2"
+                            {...props}
+                          >
+                            {String(children).replace(/\n$/, '')}
+                          </SyntaxHighlighter>
+                        ) : (
+                          <code className={className} {...props}>
+                            {children}
+                          </code>
+                        );
+                      }
+                    }}
+                  >
+                    {displayedContent}
+                  </ReactMarkdown>
+                )}
                 {isAnimating && <span className="animate-pulse inline-block ml-0.5">▌</span>}
               </div>
             )}

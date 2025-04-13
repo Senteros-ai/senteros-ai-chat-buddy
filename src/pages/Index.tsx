@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import ChatHeader from '@/components/ChatHeader';
@@ -29,6 +28,7 @@ const Index = () => {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [animateLastMessage, setAnimateLastMessage] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
   const [language, setLanguage] = useState<'ru' | 'en'>('ru');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -151,6 +151,7 @@ const Index = () => {
     let updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setIsLoading(true);
+    setIsThinking(true); // Show thinking indicator
 
     try {
       let chatId = currentChatId;
@@ -169,15 +170,7 @@ const Index = () => {
         await saveChatMessage(chatId, userMessage);
       }
 
-      // Добавляем пустое сообщение от ассистента, которое будет заполняться во время анимации
-      const tempAssistantMessage: ChatMessageType = {
-        role: 'assistant',
-        content: ''
-      };
-      
-      setMessages([...updatedMessages, tempAssistantMessage]);
-      setAnimateLastMessage(true); // Включаем анимацию для нового сообщения
-      
+      // Get assistant response
       const assistantMessage = await generateChatCompletion(updatedMessages);
       
       // Save assistant message
@@ -185,8 +178,10 @@ const Index = () => {
         await saveChatMessage(chatId, assistantMessage);
       }
 
-      // Обновляем сообщения с полным ответом от ассистента
+      // Update messages and enable animation
+      setIsThinking(false);
       updatedMessages = [...updatedMessages, assistantMessage];
+      setAnimateLastMessage(true); // Enable animation for the new message
       setMessages(updatedMessages);
       
       // For new chats or chats with default title, generate AI title
@@ -195,6 +190,7 @@ const Index = () => {
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      setIsThinking(false);
       toast({
         title: language === 'ru' ? 'Ошибка' : 'Error',
         description: error instanceof Error ? error.message : 
@@ -272,8 +268,15 @@ const Index = () => {
                   message={message} 
                   isLast={index === messages.length - 1} 
                   animateLastMessage={index === messages.length - 1 && animateLastMessage}
+                  isThinking={isThinking && index === messages.length - 1 && message.role === 'user'}
                 />
               ))}
+              {isThinking && (
+                <ChatMessage 
+                  message={{ role: 'assistant', content: '' }}
+                  isThinking={true}
+                />
+              )}
               <div ref={messagesEndRef} />
             </div>
           )}
