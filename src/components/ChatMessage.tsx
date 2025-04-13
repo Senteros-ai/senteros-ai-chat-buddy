@@ -95,12 +95,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLast, animateLastM
               <div className="relative prose dark:prose-invert prose-headings:my-4 prose-p:my-2 max-w-none">
                 <ReactMarkdown
                   components={{
-                    code({ node, inline, className, children, ...props }) {
+                    code({ node, className, children, ...props }) {
                       const match = /language-(\w+)/.exec(className || '');
-                      return !inline && match ? (
+                      return !props.className?.includes('inline') ? (
                         <SyntaxHighlighter
                           style={oneDark}
-                          language={match[1]}
+                          language={match ? match[1] : undefined}
                           PreTag="div"
                           className="rounded-md my-2"
                           {...props}
