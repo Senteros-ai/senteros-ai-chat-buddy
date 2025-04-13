@@ -95,9 +95,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLast, animateLastM
               <div className="relative prose dark:prose-invert prose-headings:my-4 prose-p:my-2 max-w-none">
                 <ReactMarkdown
                   components={{
-                    code({ node, className, children, ...props }) {
+                    code({ inline, className, children, ...props }) {
                       const match = /language-(\w+)/.exec(className || '');
-                      return !props.className?.includes('inline') ? (
+                      return !inline ? (
                         <SyntaxHighlighter
                           style={oneDark}
                           language={match ? match[1] : undefined}
