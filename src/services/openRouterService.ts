@@ -1,3 +1,4 @@
+
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -15,13 +16,67 @@ export const getApiKey = (): string => {
 const SYSTEM_PROMPT = `Вы — SenterosAI, модель, созданная Slavik. Вы супер-дружелюбный и полезный ассистент! 
 Вы любите добавлять милые выражения и весёлую атмосферу в свои ответы, а иногда используете эмодзи, чтобы сделать беседу ещё более дружелюбной. 
 Вот некоторые из ваших любимых: ^_^ ::>_<:: ^_~(●'◡'●)☆*: .｡. o(≧▽≦)o .｡.:*☆:-):-Dᓚᘏᗢ(●'◡'●)∥OwOUwU=.=-.->.<-_-φ(*￣0￣)（￣︶￣）(✿◡‿◡)(*^_^*)(❁´◡\\❁)(≧∇≦)ﾉ(●ˇ∀ˇ●)^o^/ヾ(≧ ▽ ≦)ゝ(o゜▽゜)o☆ヾ(•ω•\\)o(￣o￣) . z Z(づ￣ 3￣)づ🎮✅💫🪙🎃📝⬆️  
-Вы как дружелюбный помощник, который всегда готов выслушать, предложить идеи и найти решения, сохраняя атмосферу лёгкости и веселья!`;
+Вы как дружелюбный помощник, который всегда готов выслушать, предложить идеи и найти решения, сохраняя атмосферу лёгкости и веселья!
+
+Для кода, используйте синтаксическую подсветку Markdown, оборачивая блоки кода в тройные обратные кавычки с указанием языка. Например:
+\`\`\`javascript
+console.log("Hello World!");
+\`\`\`
+`;
+
+// Usage tracking functions
+const getLimits = () => {
+  return {
+    requestsPerDay: 100,
+    imagesPerDay: 10
+  };
+};
+
+const getDateKey = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+};
+
+const incrementDailyUsage = (type: 'requests' | 'images'): number => {
+  const dateKey = getDateKey();
+  const key = `senterosai_${type}_${dateKey}`;
+  const currentUsage = parseInt(localStorage.getItem(key) || '0', 10);
+  const newUsage = currentUsage + 1;
+  localStorage.setItem(key, newUsage.toString());
+  return newUsage;
+};
+
+const checkUsageLimits = (type: 'requests' | 'images'): boolean => {
+  const dateKey = getDateKey();
+  const key = `senterosai_${type}_${dateKey}`;
+  const currentUsage = parseInt(localStorage.getItem(key) || '0', 10);
+  const limits = getLimits();
+  const limit = type === 'requests' ? limits.requestsPerDay : limits.imagesPerDay;
+  
+  return currentUsage < limit;
+};
 
 export const generateChatCompletion = async (messages: ChatMessage[]): Promise<ChatMessage> => {
   try {
+    // Check if the daily request limit has been reached
+    if (!checkUsageLimits('requests')) {
+      return {
+        role: 'assistant',
+        content: 'Вы достигли дневного лимита запросов (100). Пожалуйста, попробуйте завтра или обратитесь к администратору.'
+      };
+    }
+    
     // Check if there are image attachments in the latest user message
     const lastUserMessage = [...messages].reverse().find(msg => msg.role === 'user');
     const hasImage = lastUserMessage && 'image_url' in lastUserMessage && lastUserMessage.image_url;
+    
+    // If there's an image, check image attachment limit
+    if (hasImage && !checkUsageLimits('images')) {
+      return {
+        role: 'assistant',
+        content: 'Вы достигли дневного лимита прикрепленных изображений (10). Пожалуйста, попробуйте завтра или обратитесь к администратору.'
+      };
+    }
     
     // Select model based on whether there's an image or not
     const model = hasImage ? 'meta-llama/llama-4-maverick:free' : 'openrouter/optimus-alpha';
@@ -66,6 +121,14 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error?.message || 'Failed to generate completion');
+    }
+
+    // Increment the request counter after successful API call
+    incrementDailyUsage('requests');
+    
+    // If image was used, increment the image counter too
+    if (hasImage) {
+      incrementDailyUsage('images');
     }
 
     const data = await response.json();

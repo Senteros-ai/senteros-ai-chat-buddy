@@ -5,6 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ReactMarkdown from 'react-markdown';
 import { simulateStreamingResponse } from '@/services/openRouterService';
 import { useAuth } from '@/contexts/AuthContext';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface ChatMessageProps {
   message: {
@@ -91,7 +93,28 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isLast, animateLastM
               </div>
             ) : (
               <div className="relative prose dark:prose-invert prose-headings:my-4 prose-p:my-2 max-w-none">
-                <ReactMarkdown>
+                <ReactMarkdown
+                  components={{
+                    code({ node, inline, className, children, ...props }) {
+                      const match = /language-(\w+)/.exec(className || '');
+                      return !inline && match ? (
+                        <SyntaxHighlighter
+                          style={oneDark}
+                          language={match[1]}
+                          PreTag="div"
+                          className="rounded-md my-2"
+                          {...props}
+                        >
+                          {String(children).replace(/\n$/, '')}
+                        </SyntaxHighlighter>
+                      ) : (
+                        <code className={className} {...props}>
+                          {children}
+                        </code>
+                      );
+                    }
+                  }}
+                >
                   {displayedContent}
                 </ReactMarkdown>
                 {isAnimating && <span className="animate-pulse inline-block ml-0.5">▌</span>}
