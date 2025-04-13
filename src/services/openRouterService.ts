@@ -1,4 +1,3 @@
-
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -22,7 +21,7 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
   try {
     // Check if there are image attachments in the latest user message
     const lastUserMessage = [...messages].reverse().find(msg => msg.role === 'user');
-    const hasImage = lastUserMessage && lastUserMessage.image_url;
+    const hasImage = lastUserMessage && 'image_url' in lastUserMessage && lastUserMessage.image_url;
     
     // Select model based on whether there's an image or not
     const model = hasImage ? 'meta-llama/llama-4-maverick:free' : 'openrouter/optimus-alpha';
