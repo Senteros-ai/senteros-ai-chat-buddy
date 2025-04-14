@@ -71,3 +71,16 @@ Yes it is!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Deploying to Netlify
+
+1. Sign up or log in to [Netlify](https://www.netlify.com/)
+2. Click "New site from Git"
+3. Choose your Git provider (GitHub, GitLab, BitBucket)
+4. Select the repository
+5. Set build settings:
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+6. Click "Deploy site"
+
+Netlify will now automatically deploy your site and provide a unique URL.
