@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 
 export type LanguageCode = 'ru' | 'en' | 'es' | 'fr' | 'de' | 'it' | 'zh' | 'ja' | 'ar' | 'pt' | 'hi';
@@ -185,9 +184,9 @@ const translations: Record<LanguageCode, LocalizedTexts> = {
     uploadError: 'Ошибка загрузки',
 
     // Chat
-    welcome: 'Привет! Я SenterosAI',
+    welcome: 'Привет! Я СентеросАИ', // Updated SenterosAI translation
     welcomeDescription: 'Я супер-дружелюбный и полезный ассистент, готовый помочь вам с любыми вопросами! (●\'◡\'●)',
-    newChat: 'Новый чат',
+    newChat: 'Новый чат', // Confirmed translation
     deleteChat: 'Удалить чат',
     renameChat: 'Переименовать чат',
     search: 'Поиск',
