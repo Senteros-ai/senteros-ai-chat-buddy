@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAppLanguage } from '@/hooks/useAppLanguage';
 
 const Auth = () => {
   const { user, signIn, signUp, loading } = useAuth();
@@ -16,6 +18,7 @@ const Auth = () => {
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { language, languages, setLanguage, texts } = useAppLanguage();
 
   // Redirect if already logged in
   if (user) {
@@ -26,8 +29,8 @@ const Auth = () => {
     e.preventDefault();
     if (!email || !password) {
       toast({
-        title: 'Ошибка',
-        description: 'Пожалуйста, заполните все поля',
+        title: texts.error,
+        description: texts.fillAllFields,
         variant: 'destructive',
       });
       return;
@@ -47,8 +50,8 @@ const Auth = () => {
     e.preventDefault();
     if (!email || !password || !username) {
       toast({
-        title: 'Ошибка',
-        description: 'Пожалуйста, заполните все поля',
+        title: texts.error,
+        description: texts.fillAllFields,
         variant: 'destructive',
       });
       return;
@@ -85,13 +88,27 @@ const Auth = () => {
           </div>
           <CardTitle className="text-2xl">SenterosAI</CardTitle>
           <CardDescription>
-            Вход в вашего персонального ИИ-ассистента
+            {texts.authDescription}
           </CardDescription>
+          <div className="mt-2">
+            <Select value={language} onValueChange={setLanguage}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={texts.selectLanguage} />
+              </SelectTrigger>
+              <SelectContent>
+                {languages.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    {lang.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <Tabs defaultValue="signin">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signin">Вход</TabsTrigger>
-            <TabsTrigger value="signup">Регистрация</TabsTrigger>
+            <TabsTrigger value="signin">{texts.signIn}</TabsTrigger>
+            <TabsTrigger value="signup">{texts.signUp}</TabsTrigger>
           </TabsList>
           <TabsContent value="signin">
             <form onSubmit={handleSignIn}>
@@ -107,7 +124,7 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Пароль</Label>
+                  <Label htmlFor="password">{texts.password}</Label>
                   <Input
                     id="password"
                     type="password"
@@ -122,7 +139,7 @@ const Auth = () => {
                   {isLoading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   ) : (
-                    'Войти'
+                    texts.signIn
                   )}
                 </Button>
               </CardFooter>
@@ -132,11 +149,11 @@ const Auth = () => {
             <form onSubmit={handleSignUp}>
               <CardContent className="space-y-4 pt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="username">Имя пользователя</Label>
+                  <Label htmlFor="username">{texts.username}</Label>
                   <Input
                     id="username"
                     type="text"
-                    placeholder="username"
+                    placeholder={texts.usernamePlaceholder}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                   />
@@ -152,7 +169,7 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password-signup">Пароль</Label>
+                  <Label htmlFor="password-signup">{texts.password}</Label>
                   <Input
                     id="password-signup"
                     type="password"
@@ -167,7 +184,7 @@ const Auth = () => {
                   {isLoading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   ) : (
-                    'Зарегистрироваться'
+                    texts.signUp
                   )}
                 </Button>
               </CardFooter>

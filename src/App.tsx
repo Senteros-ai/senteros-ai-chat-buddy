@@ -44,8 +44,23 @@ const setupThemeListener = () => {
   return () => {};
 };
 
+// Initialize browser language if not already set
+const initializeBrowserLanguage = () => {
+  if (!localStorage.getItem('language')) {
+    const browserLang = navigator.language.split('-')[0];
+    const supportedLanguages = ['ru', 'en', 'es', 'fr', 'de', 'it', 'zh', 'ja', 'ar', 'pt', 'hi'];
+    
+    if (supportedLanguages.includes(browserLang)) {
+      localStorage.setItem('language', browserLang);
+    } else {
+      localStorage.setItem('language', 'en');
+    }
+  }
+};
+
 const AppWithTheme = () => {
   useEffect(() => {
+    initializeBrowserLanguage();
     applyStoredTheme();
     return setupThemeListener();
   }, []);

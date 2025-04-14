@@ -11,25 +11,40 @@ import { ArrowLeft, Upload, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
+import { useAppLanguage } from '@/hooks/useAppLanguage';
 
-type Language = 'ru' | 'en';
 type Theme = 'light' | 'dark' | 'system';
 
+// Helper function to ensure avatar bucket exists
+const ensureAvatarBucketExists = async () => {
+  const { data: buckets } = await supabase.storage.listBuckets();
+  
+  if (!buckets?.find(bucket => bucket.name === 'avatars')) {
+    try {
+      await supabase.storage.createBucket('avatars', { public: true });
+      console.log('Created avatars bucket');
+    } catch (error: any) {
+      console.error('Error creating avatars bucket:', error.message);
+      // If bucket already exists (race condition), that's fine
+      if (!error.message.includes('already exists')) {
+        throw error;
+      }
+    }
+  }
+};
+
 const Settings = () => {
-  const [language, setLanguage] = useState<Language>('ru');
   const [theme, setTheme] = useState<Theme>('system');
   const [username, setUsername] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
+  const { language, languages, setLanguage, texts } = useAppLanguage();
 
   // Load settings from localStorage and user profile
   useEffect(() => {
-    const savedLanguage = (localStorage.getItem('language') as Language) || 'ru';
     const savedTheme = (localStorage.getItem('theme') as Theme) || 'system';
-
-    setLanguage(savedLanguage);
     setTheme(savedTheme);
     
     if (user) {
@@ -53,10 +68,8 @@ const Settings = () => {
     localStorage.setItem('theme', theme);
     
     toast({
-      title: language === 'ru' ? "Настройки сохранены" : "Settings saved",
-      description: language === 'ru' 
-        ? "Ваши настройки были успешно сохранены" 
-        : "Your settings have been successfully saved",
+      title: texts.settingsSaved,
+      description: texts.settingsSavedDesc,
     });
   };
 
@@ -74,14 +87,12 @@ const Settings = () => {
       if (error) throw error;
       
       toast({
-        title: language === 'ru' ? "Профиль обновлен" : "Profile updated",
-        description: language === 'ru' 
-          ? "Ваш профиль был успешно обновлен" 
-          : "Your profile has been successfully updated",
+        title: texts.profileUpdated,
+        description: texts.profileUpdatedDesc,
       });
     } catch (error: any) {
       toast({
-        title: language === 'ru' ? "Ошибка" : "Error",
+        title: texts.error,
         description: error.message,
         variant: "destructive",
       });
@@ -100,11 +111,8 @@ const Settings = () => {
       
       setIsUploading(true);
       
-      // Check if avatars bucket exists, if not create it
-      const { data: buckets } = await supabase.storage.listBuckets();
-      if (!buckets?.find(bucket => bucket.name === 'avatars')) {
-        await supabase.storage.createBucket('avatars', { public: true });
-      }
+      // Ensure the avatars bucket exists before uploading
+      await ensureAvatarBucketExists();
       
       const { error: uploadError } = await supabase.storage
         .from('avatars')
@@ -117,14 +125,12 @@ const Settings = () => {
       setAvatarUrl(data.publicUrl);
       
       toast({
-        title: language === 'ru' ? "Аватар загружен" : "Avatar uploaded",
-        description: language === 'ru' 
-          ? "Не забудьте сохранить изменения" 
-          : "Don't forget to save changes",
+        title: texts.avatarUploaded,
+        description: texts.dontForgetToSave,
       });
     } catch (error: any) {
       toast({
-        title: language === 'ru' ? "Ошибка загрузки" : "Upload error",
+        title: texts.uploadError,
         description: error.message,
         variant: "destructive",
       });
@@ -139,33 +145,6 @@ const Settings = () => {
     } catch (error) {
       // Error is handled in the signOut function
     }
-  };
-
-  // Локализованные тексты
-  const texts = {
-    settings: language === 'ru' ? 'Настройки' : 'Settings',
-    appearance: language === 'ru' ? 'Внешний вид' : 'Appearance',
-    configureApp: language === 'ru' 
-      ? 'Настройте язык и тему приложения' 
-      : 'Configure language and theme of the application',
-    language: language === 'ru' ? 'Язык' : 'Language',
-    selectLanguage: language === 'ru' ? 'Выберите язык' : 'Select language',
-    theme: language === 'ru' ? 'Тема' : 'Theme',
-    selectTheme: language === 'ru' ? 'Выберите тему' : 'Select theme',
-    light: language === 'ru' ? 'Светлая' : 'Light',
-    dark: language === 'ru' ? 'Темная' : 'Dark',
-    system: language === 'ru' ? 'Системная' : 'System',
-    saveSettings: language === 'ru' ? 'Сохранить настройки' : 'Save settings',
-    profile: language === 'ru' ? 'Профиль' : 'Profile',
-    manageProfile: language === 'ru' ? 'Управление профилем' : 'Manage your profile',
-    username: language === 'ru' ? 'Имя пользователя' : 'Username',
-    enterUsername: language === 'ru' ? 'Введите имя пользователя' : 'Enter username',
-    avatar: language === 'ru' ? 'Аватар' : 'Avatar',
-    uploadAvatar: language === 'ru' ? 'Загрузить аватар' : 'Upload avatar',
-    updateProfile: language === 'ru' ? 'Обновить профиль' : 'Update profile',
-    account: language === 'ru' ? 'Аккаунт' : 'Account',
-    manageAccount: language === 'ru' ? 'Управление вашим аккаунтом' : 'Manage your account',
-    signOut: language === 'ru' ? 'Выйти из аккаунта' : 'Sign out',
   };
 
   return (
@@ -236,13 +215,16 @@ const Settings = () => {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="language">{texts.language}</Label>
-            <Select value={language} onValueChange={(value) => setLanguage(value as Language)}>
+            <Select value={language} onValueChange={(value) => setLanguage(value as any)}>
               <SelectTrigger id="language">
                 <SelectValue placeholder={texts.selectLanguage} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ru">Русский</SelectItem>
-                <SelectItem value="en">English</SelectItem>
+                {languages.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    {lang.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
