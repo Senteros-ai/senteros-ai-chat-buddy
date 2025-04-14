@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAppLanguage } from '@/hooks/useAppLanguage';
+import { LanguageCode } from '@/hooks/useAppLanguage';
 
 const Auth = () => {
   const { user, signIn, signUp, loading } = useAuth();
@@ -91,7 +92,10 @@ const Auth = () => {
             {texts.authDescription}
           </CardDescription>
           <div className="mt-2">
-            <Select value={language} onValueChange={setLanguage}>
+            <Select 
+              value={language} 
+              onValueChange={(value: string) => setLanguage(value as LanguageCode)}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={texts.selectLanguage} />
               </SelectTrigger>
