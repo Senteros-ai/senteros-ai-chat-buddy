@@ -34,12 +34,6 @@ const Index = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Load language setting
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem('language') as 'ru' | 'en' || 'ru';
-    setLanguage(savedLanguage);
-  }, []);
-
   // Apply theme from localStorage
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -59,6 +53,12 @@ const Index = () => {
     } else {
       document.documentElement.classList.toggle('dark', savedTheme === 'dark');
     }
+  }, []);
+
+  // Load language setting
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('language') as 'ru' | 'en' || 'ru';
+    setLanguage(savedLanguage);
   }, []);
 
   // Load user chats

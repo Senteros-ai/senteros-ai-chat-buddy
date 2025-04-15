@@ -63,6 +63,9 @@ const AppWithTheme = () => {
     initializeBrowserLanguage();
     applyStoredTheme();
     return setupThemeListener();
+    
+    // Update document title for SEO
+    document.title = "SenterosAI Chat Buddy";
   }, []);
 
   return (

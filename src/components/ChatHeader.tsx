@@ -50,7 +50,14 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
           <Button variant="ghost" size="icon" onClick={onToggleSidebar}>
             <Menu className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-semibold hidden md:block">SenterosAI</h1>
+          <div className="flex items-center">
+            <img 
+              src="https://i.ibb.co/xKtY6RXz/Chat-GPT-Image-1-2025-17-16-51.png" 
+              alt="SenterosAI" 
+              className="h-8 w-8 mr-2 hidden sm:block"
+            />
+            <h1 className="text-xl font-semibold">SenterosAI</h1>
+          </div>
         </div>
         
         <div className="flex items-center space-x-2">
