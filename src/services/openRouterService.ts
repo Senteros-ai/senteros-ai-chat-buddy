@@ -1,3 +1,4 @@
+
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -77,8 +78,8 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
       };
     }
     
-    // Select model based on whether there's an image or not
-    const model = hasImage ? 'meta-llama/llama-4-maverick:free' : 'openrouter/optimus-alpha';
+    // Always use the meta-llama/llama-4-maverick:free model
+    const model = 'meta-llama/llama-4-maverick:free';
     
     // Add system message if not already present
     const messagesWithSystem = messages.some(msg => msg.role === 'system') 
