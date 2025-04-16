@@ -31,6 +31,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
     settings: language === 'ru' ? 'Настройки' : 'Settings',
     account: language === 'ru' ? 'Аккаунт' : 'Account',
     signOut: language === 'ru' ? 'Выйти' : 'Sign out',
+    newChat: language === 'ru' ? 'Новый чат' : 'New Chat',
   };
   
   // Получаем инициалы пользователя или имя из метаданных
@@ -68,7 +69,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             className="flex items-center"
           >
             <Plus className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">New Chat</span>
+            <span className="hidden sm:inline">{texts.newChat}</span>
           </Button>
           
           <DropdownMenu>

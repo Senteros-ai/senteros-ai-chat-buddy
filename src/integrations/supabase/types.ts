@@ -33,6 +33,86 @@ export type Database = {
         }
         Relationships: []
       }
+      donations: {
+        Row: {
+          amount: number
+          created_at: string | null
+          donor_id: string | null
+          donor_name: string
+          dream_id: string
+          id: string
+          message: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          donor_id?: string | null
+          donor_name: string
+          dream_id: string
+          id?: string
+          message?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          donor_id?: string | null
+          donor_name?: string
+          dream_id?: string
+          id?: string
+          message?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donations_dream_id_fkey"
+            columns: ["dream_id"]
+            isOneToOne: false
+            referencedRelation: "dreams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dreams: {
+        Row: {
+          amount: number
+          author_id: string | null
+          author_name: string
+          collected: number | null
+          created_at: string | null
+          description: string
+          id: string
+          image_url: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          author_id?: string | null
+          author_name: string
+          collected?: number | null
+          created_at?: string | null
+          description: string
+          id?: string
+          image_url?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          author_id?: string | null
+          author_name?: string
+          collected?: number | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          image_url?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           chat_id: string | null
@@ -94,6 +174,80 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
+      }
+      projects: {
+        Row: {
+          budget: number
+          client_id: string
+          created_at: string | null
+          description: string
+          id: string
+          status: string
+          title: string
+          updated_at: string | null
+          writer_id: string | null
+        }
+        Insert: {
+          budget: number
+          client_id: string
+          created_at?: string | null
+          description: string
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string | null
+          writer_id?: string | null
+        }
+        Update: {
+          budget?: number
+          client_id?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
+          writer_id?: string | null
+        }
+        Relationships: []
+      }
+      proposals: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          price: number
+          project_id: string
+          status: string
+          writer_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          price: number
+          project_id: string
+          status?: string
+          writer_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          price?: number
+          project_id?: string
+          status?: string
+          writer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposals_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tracks: {
         Row: {
@@ -160,6 +314,39 @@ export type Database = {
           id?: string
           updated_at?: string | null
           username?: string | null
+        }
+        Relationships: []
+      }
+      writer_profiles: {
+        Row: {
+          bio: string
+          created_at: string | null
+          expertise: string[]
+          hourly_rate: number
+          id: string
+          portfolio_items: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          bio: string
+          created_at?: string | null
+          expertise?: string[]
+          hourly_rate: number
+          id?: string
+          portfolio_items?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          bio?: string
+          created_at?: string | null
+          expertise?: string[]
+          hourly_rate?: number
+          id?: string
+          portfolio_items?: Json | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
