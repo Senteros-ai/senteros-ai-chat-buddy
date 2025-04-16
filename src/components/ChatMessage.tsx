@@ -61,7 +61,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   return <div className={cn("flex w-full py-4 px-4 md:px-8", isUser ? "bg-secondary/50" : "bg-background")}>
       <div className="flex w-full max-w-screen-lg mx-auto space-x-4">
         <Avatar className={cn("h-8 w-8 rounded-full shrink-0", isUser ? "bg-chat-user-bubble" : "bg-chat-bot-bubble")}>
-          {isUser ? user?.user_metadata?.avatar_url ? <AvatarImage src={user.user_metadata.avatar_url} alt="User" /> : <AvatarFallback className="text-sm text-gray-950">
+          {isUser ? user?.user_metadata?.avatar_url ? <AvatarImage src={user.user_metadata.avatar_url} alt="User" className="text-violet-500" /> : <AvatarFallback className="text-sm text-gray-950">
                 {user?.user_metadata?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
               </AvatarFallback> : <AvatarImage src="https://i.ibb.co/xKtY6RXz/Chat-GPT-Image-1-2025-17-16-51.png" alt="SenterosAI" className="h-full w-full object-contain p-1 bg-transparent" />}
         </Avatar>
