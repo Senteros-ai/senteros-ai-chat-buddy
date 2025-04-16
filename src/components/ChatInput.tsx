@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { SendHorizonal, ImageIcon, X } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
+import YandexAdManager from './YandexAdManager';
 
 interface ChatInputProps {
   onSendMessage: (message: string, imageUrl?: string) => void;
@@ -16,6 +17,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [showAd, setShowAd] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -86,8 +88,22 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled }) => {
     }
   };
 
+  const handleImageButtonClick = () => {
+    setShowAd(true);
+    // The actual file input click will happen after the ad is shown or skipped
+  };
+
+  const handleAdClosed = () => {
+    setShowAd(false);
+    // Programmatically click the file input after the ad is shown
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   return (
     <div className="border-t p-4 dark:border-gray-700">
+      <YandexAdManager trigger={showAd} onClose={handleAdClosed} />
       <div className="max-w-3xl mx-auto flex flex-col space-y-4">
         {imagePreview && (
           <div className="relative inline-block w-24 h-24">
@@ -123,7 +139,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled }) => {
             <Button
               size="icon" 
               variant="ghost"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={handleImageButtonClick}
               disabled={disabled || isUploading}
               type="button"
             >

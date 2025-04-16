@@ -13,6 +13,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { useAppLanguage } from '@/hooks/useAppLanguage';
+import YandexAdManager from './YandexAdManager';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -21,6 +22,7 @@ interface SettingsDialogProps {
 
 const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange }) => {
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
+  const [showSaveAd, setShowSaveAd] = useState(false);
   const { toast } = useToast();
   const { language, languages, setLanguage, texts } = useAppLanguage();
 
@@ -31,6 +33,13 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange }) =
   }, [open]);
 
   const handleSaveSettings = () => {
+    setShowSaveAd(true);
+  };
+
+  const handleSaveAdClosed = () => {
+    setShowSaveAd(false);
+    
+    // Actually save the settings after ad is shown
     localStorage.setItem('theme', theme);
     
     // Apply theme
@@ -55,6 +64,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange }) =
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      <YandexAdManager trigger={showSaveAd} onClose={handleSaveAdClosed} />
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { Link } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppLanguage } from '@/hooks/useAppLanguage';
+import YandexAdManager from '@/components/YandexAdManager';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -38,6 +38,7 @@ const Settings = () => {
   const [username, setUsername] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showSaveAd, setShowSaveAd] = useState(false);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const { language, languages, setLanguage, texts } = useAppLanguage();
@@ -64,6 +65,12 @@ const Settings = () => {
   }, [theme]);
 
   const handleSaveSettings = () => {
+    setShowSaveAd(true);
+  };
+
+  const handleSaveAdClosed = () => {
+    setShowSaveAd(false);
+    // Actually save the settings after ad is shown
     localStorage.setItem('language', language);
     localStorage.setItem('theme', theme);
     
@@ -149,6 +156,8 @@ const Settings = () => {
 
   return (
     <div className="container mx-auto max-w-2xl py-8">
+      <YandexAdManager trigger={showSaveAd} onClose={handleSaveAdClosed} />
+      
       <div className="flex items-center mb-6">
         <Link to="/" className="mr-4">
           <Button variant="ghost" size="icon">

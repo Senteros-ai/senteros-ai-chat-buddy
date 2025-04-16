@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Chat, updateChatTitle, deleteChat } from '@/services/chatService';
 import { MessageSquare, Edit, Trash2, Check, X, Plus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import YandexAdManager from './YandexAdManager';
 
 interface ChatSidebarProps {
   chats: Chat[];
@@ -33,6 +34,8 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
   const [newTitle, setNewTitle] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [chatToDelete, setChatToDelete] = useState<Chat | null>(null);
+  const [showEditAd, setShowEditAd] = useState(false);
+  const [showDeleteAd, setShowDeleteAd] = useState(false);
   const { toast } = useToast();
 
   const texts = {
@@ -55,6 +58,8 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
   const handleEdit = (chat: Chat, e: React.MouseEvent) => {
     e.stopPropagation();
+    setShowEditAd(true);
+    // Store the chat information to use after ad is shown
     setEditingChatId(chat.id);
     setNewTitle(chat.title);
   };
@@ -89,6 +94,11 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
   const handleDeleteClick = (chat: Chat, e: React.MouseEvent) => {
     e.stopPropagation();
     setChatToDelete(chat);
+    setShowDeleteAd(true);
+  };
+
+  const handleDeleteAdClosed = () => {
+    setShowDeleteAd(false);
     setDeleteDialogOpen(true);
   };
 
@@ -116,6 +126,9 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
   return (
     <>
+      <YandexAdManager trigger={showEditAd} onClose={() => setShowEditAd(false)} />
+      <YandexAdManager trigger={showDeleteAd} onClose={handleDeleteAdClosed} />
+      
       <Sheet open={isOpen} onOpenChange={onOpenChange}>
         <SheetContent side="left" className="w-[300px] sm:w-[350px] p-0">
           <div className="flex flex-col h-full">
