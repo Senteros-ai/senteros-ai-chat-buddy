@@ -46,6 +46,7 @@ interface LocalizedTexts {
   avatarUploaded: string;
   dontForgetToSave: string;
   uploadError: string;
+  experimentalDesign: string; // Added the missing property here
   
   // Chat
   welcome: string;
@@ -122,7 +123,8 @@ const translations: Record<LanguageCode, LocalizedTexts> = {
     avatarUploaded: 'Avatar uploaded',
     dontForgetToSave: 'Don\'t forget to save changes',
     uploadError: 'Upload error',
-
+    experimentalDesign: 'Experimental Design',
+    
     // Chat
     welcome: 'Hello! I am SenterosAI',
     welcomeDescription: 'I am a super-friendly and helpful assistant, ready to help you with any questions! (●\'◡\'●)',
@@ -182,6 +184,7 @@ const translations: Record<LanguageCode, LocalizedTexts> = {
     avatarUploaded: 'Аватар загружен',
     dontForgetToSave: 'Не забудьте сохранить изменения',
     uploadError: 'Ошибка загрузки',
+    experimentalDesign: 'Экспериментальный дизайн',
 
     // Chat
     welcome: 'Привет! Я СентеросАИ', // Updated SenterosAI translation
@@ -242,6 +245,7 @@ const translations: Record<LanguageCode, LocalizedTexts> = {
     avatarUploaded: 'Avatar subido',
     dontForgetToSave: 'No olvides guardar los cambios',
     uploadError: 'Error de subida',
+    experimentalDesign: 'Diseño experimental',
 
     // Chat
     welcome: '¡Hola! Soy SenterosAI',
@@ -302,6 +306,7 @@ const translations: Record<LanguageCode, LocalizedTexts> = {
     avatarUploaded: 'Avatar téléchargé',
     dontForgetToSave: 'N\'oubliez pas d\'enregistrer les modifications',
     uploadError: 'Erreur de téléchargement',
+    experimentalDesign: 'Design expérimental',
 
     // Chat
     welcome: 'Bonjour ! Je suis SenterosAI',
@@ -362,6 +367,7 @@ const translations: Record<LanguageCode, LocalizedTexts> = {
     avatarUploaded: 'Avatar hochgeladen',
     dontForgetToSave: 'Vergessen Sie nicht, die Änderungen zu speichern',
     uploadError: 'Uploadfehler',
+    experimentalDesign: 'Experimentelles Design',
 
     // Chat
     welcome: 'Hallo! Ich bin SenterosAI',
@@ -422,6 +428,7 @@ const translations: Record<LanguageCode, LocalizedTexts> = {
     avatarUploaded: 'Avatar caricato',
     dontForgetToSave: 'Non dimenticare di salvare le modifiche',
     uploadError: 'Errore di caricamento',
+    experimentalDesign: 'Design sperimentale',
 
     // Chat
     welcome: 'Ciao! Sono SenterosAI',
@@ -482,6 +489,7 @@ const translations: Record<LanguageCode, LocalizedTexts> = {
     avatarUploaded: '头像已上传',
     dontForgetToSave: '别忘了保存更改',
     uploadError: '上传错误',
+    experimentalDesign: '实验设计',
 
     // Chat
     welcome: '你好！我是SenterosAI',
@@ -542,6 +550,7 @@ const translations: Record<LanguageCode, LocalizedTexts> = {
     avatarUploaded: 'アバターがアップロードされました',
     dontForgetToSave: '変更を保存することを忘れないでください',
     uploadError: 'アップロードエラー',
+    experimentalDesign: '実験的なデザイン',
 
     // Chat
     welcome: 'こんにちは！SenterosAIです',
@@ -602,6 +611,7 @@ const translations: Record<LanguageCode, LocalizedTexts> = {
     avatarUploaded: 'تم تحميل الصورة الرمزية',
     dontForgetToSave: 'لا تنس حفظ التغييرات',
     uploadError: 'خطأ في التحميل',
+    experimentalDesign: 'تصميم تجريبي',
 
     // Chat
     welcome: 'مرحبًا! أنا SenterosAI',
@@ -662,6 +672,7 @@ const translations: Record<LanguageCode, LocalizedTexts> = {
     avatarUploaded: 'Avatar carregado',
     dontForgetToSave: 'Não se esqueça de salvar as alterações',
     uploadError: 'Erro de carregamento',
+    experimentalDesign: 'Design experimental',
 
     // Chat
     welcome: 'Olá! Eu sou SenterosAI',
@@ -722,6 +733,7 @@ const translations: Record<LanguageCode, LocalizedTexts> = {
     avatarUploaded: 'अवतार अपलोड किया गया',
     dontForgetToSave: 'परिवर्तनों को सहेजना न भूलें',
     uploadError: 'अपलोड त्रुटि',
+    experimentalDesign: 'प्रयोगात्मक डिज़ाइन',
 
     // Chat
     welcome: 'नमस्ते! मैं SenterosAI हूँ',
