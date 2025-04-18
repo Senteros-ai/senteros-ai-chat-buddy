@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -30,7 +31,7 @@ const setupThemeListener = () => {
   const storedTheme = localStorage.getItem('theme') || 'system';
   
   if (storedTheme === 'system') {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     
     const handleChange = (e: MediaQueryListEvent) => {
       document.documentElement.classList.toggle('dark', e.matches);
