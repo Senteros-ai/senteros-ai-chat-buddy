@@ -78,8 +78,8 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
       };
     }
     
-    // Always use the meta-llama/llama-4-maverick:free model
-    const model = 'meta-llama/llama-4-maverick:free';
+    // Now using the mistralai/mistral-small-3.1-24b-instruct:free model
+    const model = 'mistralai/mistral-small-3.1-24b-instruct:free';
     
     // Add system message if not already present
     const messagesWithSystem = messages.some(msg => msg.role === 'system') 

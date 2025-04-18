@@ -26,12 +26,18 @@ const applyStoredTheme = () => {
   }
 };
 
+// Apply experimental design setting from localStorage
+const applyExperimentalDesign = () => {
+  const experimentalDesign = localStorage.getItem('experimentalDesign') === 'true';
+  document.documentElement.classList.toggle('experimental-design', experimentalDesign);
+};
+
 // Добавляем поддержку для наблюдения за изменениями системной темы
 const setupThemeListener = () => {
   const storedTheme = localStorage.getItem('theme') || 'system';
   
   if (storedTheme === 'system') {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     
     const handleChange = (e: MediaQueryListEvent) => {
       document.documentElement.classList.toggle('dark', e.matches);
@@ -62,6 +68,7 @@ const AppWithTheme = () => {
   useEffect(() => {
     initializeBrowserLanguage();
     applyStoredTheme();
+    applyExperimentalDesign();
     return setupThemeListener();
     
     // Update document title for SEO
