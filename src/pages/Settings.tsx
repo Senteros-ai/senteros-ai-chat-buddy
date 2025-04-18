@@ -19,19 +19,32 @@ type Theme = 'light' | 'dark' | 'system';
 
 // Helper function to ensure avatar bucket exists
 const ensureAvatarBucketExists = async () => {
-  const { data: buckets } = await supabase.storage.listBuckets();
-  
-  if (!buckets?.find(bucket => bucket.name === 'avatars')) {
-    try {
-      await supabase.storage.createBucket('avatars', { public: true });
-      console.log('Created avatars bucket');
-    } catch (error: any) {
-      console.error('Error creating avatars bucket:', error.message);
-      // If bucket already exists (race condition), that's fine
-      if (!error.message.includes('already exists')) {
-        throw error;
+  try {
+    // First check if the bucket exists
+    const { data: buckets } = await supabase.storage.listBuckets();
+    
+    if (!buckets?.find(bucket => bucket.name === 'avatars')) {
+      try {
+        // Create the bucket if it doesn't exist
+        await supabase.storage.createBucket('avatars', { 
+          public: true,
+          fileSizeLimit: 1024 * 1024 * 2 // 2MB limit
+        });
+        console.log('Created avatars bucket');
+      } catch (error: any) {
+        console.error('Error creating avatars bucket:', error.message);
+        // If bucket already exists (race condition), that's fine
+        if (!error.message.includes('already exists')) {
+          throw error;
+        }
       }
     }
+    
+    // Ensure bucket is public (in case it exists but isn't public)
+    await supabase.storage.getBucket('avatars');
+  } catch (error) {
+    console.error('Error ensuring avatar bucket exists:', error);
+    throw error;
   }
 };
 
@@ -58,22 +71,23 @@ const Settings = () => {
       setUsername(user.user_metadata?.username || '');
       setAvatarUrl(user.user_metadata?.avatar_url || null);
     }
+    
+    // Apply theme
+    applyTheme(savedTheme);
+    
+    // Apply experimental design
+    document.documentElement.classList.toggle('experimental-design', savedExperimentalDesign);
   }, [user]);
 
   // Apply theme when it changes
-  useEffect(() => {
-    if (theme === 'system') {
+  const applyTheme = (selectedTheme: Theme) => {
+    if (selectedTheme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       document.documentElement.classList.toggle('dark', systemTheme === 'dark');
     } else {
-      document.documentElement.classList.toggle('dark', theme === 'dark');
+      document.documentElement.classList.toggle('dark', selectedTheme === 'dark');
     }
-  }, [theme]);
-
-  // Apply experimental design when it changes
-  useEffect(() => {
-    document.documentElement.classList.toggle('experimental-design', experimentalDesign);
-  }, [experimentalDesign]);
+  };
 
   const handleSaveSettings = () => {
     setShowSaveAd(true);
@@ -85,6 +99,12 @@ const Settings = () => {
     localStorage.setItem('language', language);
     localStorage.setItem('theme', theme);
     localStorage.setItem('experimentalDesign', experimentalDesign.toString());
+    
+    // Apply theme
+    applyTheme(theme);
+    
+    // Apply experimental design
+    document.documentElement.classList.toggle('experimental-design', experimentalDesign);
     
     toast({
       title: texts.settingsSaved,
@@ -133,15 +153,15 @@ const Settings = () => {
       // Ensure the avatars bucket exists before uploading
       await ensureAvatarBucketExists();
       
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError, data } = await supabase.storage
         .from('avatars')
         .upload(filePath, file);
         
       if (uploadError) throw uploadError;
       
-      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
       
-      setAvatarUrl(data.publicUrl);
+      setAvatarUrl(publicUrlData.publicUrl);
       
       toast({
         title: texts.avatarUploaded,

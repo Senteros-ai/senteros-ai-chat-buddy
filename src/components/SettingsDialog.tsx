@@ -119,7 +119,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange }) =
           
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="experimental-design" className="col-span-3">
-              {texts.experimentalDesign || 'Экспериментальный дизайн'}
+              {texts.experimentalDesign}
             </Label>
             <Switch
               id="experimental-design"

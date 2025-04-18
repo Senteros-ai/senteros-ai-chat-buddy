@@ -78,8 +78,8 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
       };
     }
     
-    // Now using the mistralai/mistral-small-3.1-24b-instruct:free model
-    const model = 'mistralai/mistral-small-3.1-24b-instruct:free';
+    // Using the meta-llama/llama-4-maverick:free model as requested
+    const model = 'meta-llama/llama-4-maverick:free';
     
     // Add system message if not already present
     const messagesWithSystem = messages.some(msg => msg.role === 'system') 
@@ -132,6 +132,11 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
     }
 
     const data = await response.json();
+    
+    if (!data.choices || data.choices.length === 0) {
+      throw new Error('No response data received from API');
+    }
+    
     return {
       role: 'assistant',
       content: data.choices[0].message.content
