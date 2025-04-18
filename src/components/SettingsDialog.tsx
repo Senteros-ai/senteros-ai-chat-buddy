@@ -11,7 +11,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
 import { useAppLanguage } from '@/hooks/useAppLanguage';
 import YandexAdManager from './YandexAdManager';
@@ -23,7 +22,6 @@ interface SettingsDialogProps {
 
 const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange }) => {
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
-  const [experimentalDesign, setExperimentalDesign] = useState(false);
   const [showSaveAd, setShowSaveAd] = useState(false);
   const { toast } = useToast();
   const { language, languages, setLanguage, texts } = useAppLanguage();
@@ -31,9 +29,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange }) =
   // Load settings from localStorage on mount
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'system' || 'system';
-    const savedExperimentalDesign = localStorage.getItem('experimentalDesign') === 'true';
     setTheme(savedTheme);
-    setExperimentalDesign(savedExperimentalDesign);
   }, [open]);
 
   const handleSaveSettings = () => {
@@ -45,13 +41,9 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange }) =
     
     // Actually save the settings after ad is shown
     localStorage.setItem('theme', theme);
-    localStorage.setItem('experimentalDesign', experimentalDesign.toString());
     
     // Apply theme
     applyTheme(theme);
-    
-    // Apply experimental design
-    document.documentElement.classList.toggle('experimental-design', experimentalDesign);
     
     toast({
       title: texts.settingsSaved,
@@ -115,18 +107,6 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange }) =
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="experimental-design" className="col-span-3">
-              {texts.experimentalDesign}
-            </Label>
-            <Switch
-              id="experimental-design"
-              checked={experimentalDesign}
-              onCheckedChange={setExperimentalDesign}
-              className="col-span-1 justify-self-end"
-            />
           </div>
         </div>
         <DialogFooter>

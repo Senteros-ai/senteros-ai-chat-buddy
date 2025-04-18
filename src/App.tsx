@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,7 +13,7 @@ import { useEffect } from "react";
 
 const queryClient = new QueryClient();
 
-// Применение темы из localStorage при загрузке
+// Apply theme from localStorage on load
 const applyStoredTheme = () => {
   const storedTheme = localStorage.getItem('theme') || 'system';
   
@@ -26,18 +25,12 @@ const applyStoredTheme = () => {
   }
 };
 
-// Apply experimental design setting from localStorage
-const applyExperimentalDesign = () => {
-  const experimentalDesign = localStorage.getItem('experimentalDesign') === 'true';
-  document.documentElement.classList.toggle('experimental-design', experimentalDesign);
-};
-
-// Добавляем поддержку для наблюдения за изменениями системной темы
+// Setup theme listener
 const setupThemeListener = () => {
   const storedTheme = localStorage.getItem('theme') || 'system';
   
   if (storedTheme === 'system') {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     
     const handleChange = (e: MediaQueryListEvent) => {
       document.documentElement.classList.toggle('dark', e.matches);
@@ -68,7 +61,6 @@ const AppWithTheme = () => {
   useEffect(() => {
     initializeBrowserLanguage();
     applyStoredTheme();
-    applyExperimentalDesign();
     return setupThemeListener();
     
     // Update document title for SEO

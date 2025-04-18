@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
@@ -50,7 +48,6 @@ const ensureAvatarBucketExists = async () => {
 
 const Settings = () => {
   const [theme, setTheme] = useState<Theme>('system');
-  const [experimentalDesign, setExperimentalDesign] = useState(false);
   const [username, setUsername] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -62,10 +59,8 @@ const Settings = () => {
   // Load settings from localStorage and user profile
   useEffect(() => {
     const savedTheme = (localStorage.getItem('theme') as Theme) || 'system';
-    const savedExperimentalDesign = localStorage.getItem('experimentalDesign') === 'true';
     
     setTheme(savedTheme);
-    setExperimentalDesign(savedExperimentalDesign);
     
     if (user) {
       setUsername(user.user_metadata?.username || '');
@@ -74,9 +69,6 @@ const Settings = () => {
     
     // Apply theme
     applyTheme(savedTheme);
-    
-    // Apply experimental design
-    document.documentElement.classList.toggle('experimental-design', savedExperimentalDesign);
   }, [user]);
 
   // Apply theme when it changes
@@ -98,13 +90,9 @@ const Settings = () => {
     // Actually save the settings after ad is shown
     localStorage.setItem('language', language);
     localStorage.setItem('theme', theme);
-    localStorage.setItem('experimentalDesign', experimentalDesign.toString());
     
     // Apply theme
     applyTheme(theme);
-    
-    // Apply experimental design
-    document.documentElement.classList.toggle('experimental-design', experimentalDesign);
     
     toast({
       title: texts.settingsSaved,
@@ -281,16 +269,6 @@ const Settings = () => {
                 <SelectItem value="system">{texts.system}</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div className="flex items-center justify-between">
-            <Label htmlFor="experimental-design" className="cursor-pointer">
-              {texts.experimentalDesign || "Экспериментальный дизайн"}
-            </Label>
-            <Switch
-              id="experimental-design"
-              checked={experimentalDesign}
-              onCheckedChange={setExperimentalDesign}
-            />
           </div>
           <Button onClick={handleSaveSettings} className="w-full">
             {texts.saveSettings}
