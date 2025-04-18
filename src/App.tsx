@@ -62,10 +62,12 @@ const AppWithTheme = () => {
   useEffect(() => {
     initializeBrowserLanguage();
     applyStoredTheme();
-    return setupThemeListener();
+    const cleanup = setupThemeListener();
     
     // Update document title for SEO
-    document.title = "SenterosAI Chat Buddy";
+    document.title = "SenterosAI - Умный помощник на базе Mistral";
+    
+    return cleanup;
   }, []);
 
   return (

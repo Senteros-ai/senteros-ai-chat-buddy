@@ -5,7 +5,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 40% 98%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -94,13 +94,106 @@
   }
 }
 
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* Layout Styles */
+body {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 
+#root {
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+/* Chat UI Styling */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-image: linear-gradient(to bottom right, hsl(var(--background)), hsl(var(--muted)));
+}
+
+.message-bubble {
+  position: relative;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  max-width: 85%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  animation: fade-in 0.3s ease-out;
+}
+
+.message-bubble.user {
+  border-bottom-right-radius: 0.25rem;
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  align-self: flex-end;
+  margin-right: 1rem;
+}
+
+.message-bubble.assistant {
+  border-bottom-left-radius: 0.25rem;
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  align-self: flex-start;
+  margin-left: 1rem;
+}
+
+/* Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { 
+    opacity: 1; 
+  }
+  50% { 
+    opacity: 0.5; 
+  }
+}
+
+@keyframes bounce-slight {
+  0%, 100% { 
+    transform: translateY(0); 
+  }
+  50% { 
+    transform: translateY(-4px); 
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2s infinite ease-in-out;
+}
+
+.animate-bounce-slight {
+  animation: bounce-slight 2s infinite ease-in-out;
+}
+
+/* Sidebar styling */
+.sidebar {
+  background-color: hsl(var(--sidebar-background));
+  border-right: 1px solid hsl(var(--sidebar-border));
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Chat input styling */
+.input-container {
+  background-color: hsl(var(--background));
+  border-top: 1px solid hsl(var(--border));
+  padding: 1rem;
+}
+
+/* Logo styles */
 .logo {
   height: 6em;
   padding: 1.5em;
@@ -127,12 +220,4 @@
   a:nth-of-type(2) .logo {
     animation: logo-spin infinite 20s linear;
   }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
 }

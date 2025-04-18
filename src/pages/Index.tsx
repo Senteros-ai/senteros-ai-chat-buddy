@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import ChatHeader from '@/components/ChatHeader';
@@ -5,11 +6,12 @@ import ChatMessage from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
 import ChatSidebar from '@/components/ChatSidebar';
 import SettingsDialog from '@/components/SettingsDialog';
+import { ChatMessage as ChatMessageType } from '@/services/openRouterService';
 import { 
   generateChatCompletion, 
-  ChatMessage as ChatMessageType,
-  generateChatTitle
-} from '@/services/openRouterService';
+  generateChatTitle,
+  simulateStreamingResponse
+} from '@/services/mistralService';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   fetchUserChats, 
@@ -239,29 +241,31 @@ const Index = () => {
         language={language}
       />
       
-      <div className="flex flex-col h-screen w-full">
+      <div className="flex flex-col h-screen w-full chat-container">
         <ChatHeader 
           onNewChat={handleNewChat}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         />
         
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto p-4">
           {messages.length === 0 ? (
             <div className="flex h-full items-center justify-center">
-              <div className="text-center space-y-4 p-4 max-w-md">
+              <div className="text-center space-y-4 p-4 max-w-md bg-card/50 rounded-xl shadow-md backdrop-blur-sm">
                 <img
                   src="https://i.ibb.co/xKtY6RXz/Chat-GPT-Image-1-2025-17-16-51.png"
                   alt="SenterosAI"
                   className="w-20 h-20 mx-auto animate-bounce-slight bg-transparent"
                 />
-                <h2 className="text-2xl font-bold">{texts.welcome}</h2>
+                <h2 className="text-2xl font-bold">{language === 'ru' ? 'Привет! Я SenterosAI на базе Mistral' : 'Hello! I am SenterosAI powered by Mistral'}</h2>
                 <p className="text-muted-foreground">
-                  {texts.description}
+                  {language === 'ru' 
+                    ? 'Я супер-дружелюбный и полезный ассистент, готовый помочь вам с любыми вопросами! (●\'◡\'●)' 
+                    : 'I am a super-friendly and helpful assistant, ready to help you with any questions! (●\'◡\'●)'}
                 </p>
               </div>
             </div>
           ) : (
-            <div className="pb-4">
+            <div className="space-y-4 max-w-4xl mx-auto">
               {messages.map((message, index) => (
                 <ChatMessage 
                   key={index} 
