@@ -1,3 +1,4 @@
+
 import { ChatMessage } from './openRouterService';
 import { conversationExamples } from './aiTrainingExamples';
 
@@ -101,10 +102,17 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
     
     // Format messages for API
     const formattedMessages = messagesWithSystem.map(msg => {
+      // Use type guard to safely access image_url property
+      if ('image_url' in msg) {
+        return {
+          role: msg.role,
+          content: msg.content,
+          image_url: msg.image_url
+        };
+      }
       return {
         role: msg.role,
-        content: msg.content,
-        ...(msg.image_url ? { image_url: msg.image_url } : {})
+        content: msg.content
       };
     });
     
