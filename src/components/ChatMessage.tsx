@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -64,7 +63,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         <Avatar className={cn("h-8 w-8 rounded-full shrink-0", isUser ? "bg-chat-user-bubble" : "bg-chat-bot-bubble")}>
           {isUser ? user?.user_metadata?.avatar_url ? <AvatarImage src={user.user_metadata.avatar_url} alt="User" className="text-violet-500" /> : <AvatarFallback className="text-sm dark:text-white text-black">
                 {user?.user_metadata?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
-              </AvatarFallback> : <AvatarImage src="https://i.ibb.co/xKtY6RXz/Chat-GPT-Image-1-2025-17-16-51.png" alt="SenterosAI" className="h-full w-full object-contain p-1 bg-transparent" />}
+              </AvatarFallback> : <AvatarImage src="https://i.ibb.co/6JWhNYQF/photo-2025-04-21-16-32-07-removebg-preview.png" alt="SenterosAI" className="h-full w-full object-contain p-1 bg-transparent" />}
         </Avatar>
         
         <div className="flex-1 space-y-2 overflow-hidden">

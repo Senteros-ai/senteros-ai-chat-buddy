@@ -1,5 +1,5 @@
-
 import { ChatMessage } from './openRouterService';
+import { conversationExamples } from './aiTrainingExamples';
 
 // Updated API key that doesn't require user input
 const API_KEY = 'eRmavVbJ4STOrZalhzf7WigVhOjoxJmv';
@@ -19,6 +19,26 @@ const SYSTEM_PROMPT = `Вы — SenterosAI, модель, созданная Sla
 console.log("Hello World!");
 \`\`\`
 `;
+
+// Generate training context from examples
+const generateTrainingContext = (): string => {
+  // Take a few examples to include in the training context
+  const selectedExamples = conversationExamples.slice(0, 3);
+  
+  let trainingContext = "Вот несколько примеров ваших предыдущих разговоров. Используйте похожий стиль и тон:\n\n";
+  
+  selectedExamples.forEach((example, index) => {
+    trainingContext += `Пользователь: ${example.user}\n`;
+    trainingContext += `SenterosAI: ${example.assistant}\n\n`;
+  });
+  
+  return trainingContext;
+};
+
+// Enhanced system prompt with training examples
+const getEnhancedSystemPrompt = (): string => {
+  return `${SYSTEM_PROMPT}\n\n${generateTrainingContext()}`;
+};
 
 // Usage tracking functions
 const getLimits = () => {
@@ -77,7 +97,7 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
     // Add system message if not already present
     const messagesWithSystem = messages.some(msg => msg.role === 'system') 
       ? messages 
-      : [{ role: 'system', content: SYSTEM_PROMPT }, ...messages];
+      : [{ role: 'system', content: getEnhancedSystemPrompt() }, ...messages];
     
     // Format messages for Mistral API
     const formattedMessages = messagesWithSystem.map(msg => {
