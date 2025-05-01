@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -6,6 +7,7 @@ import { simulateStreamingResponse } from '@/services/openRouterService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import TypingIndicator from './TypingIndicator';
 interface ChatMessageProps {
   message: {
@@ -38,6 +40,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const {
     user
   } = useAuth();
+  const isDarkMode = document.documentElement.classList.contains('dark');
 
   // Запускаем анимацию только для последнего сообщения от ассистента
   useEffect(() => {
@@ -60,7 +63,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   }, [message.content, isUser, isLast, animateLastMessage]);
   return <div className={cn("flex w-full py-4 px-4 md:px-8", isUser ? "bg-secondary/50" : "bg-background")}>
       <div className="flex w-full max-w-screen-lg mx-auto space-x-4">
-        <Avatar className={cn("h-8 w-8 rounded-full shrink-0", isUser ? "bg-chat-user-bubble" : "bg-chat-bot-bubble")}>
+        <Avatar className={cn("h-8 w-8 rounded-full shrink-0", 
+          isUser ? "bg-sky-100 dark:bg-slate-700" : "bg-blue-100 dark:bg-blue-900")}>
           {isUser ? user?.user_metadata?.avatar_url ? <AvatarImage src={user.user_metadata.avatar_url} alt="User" className="text-violet-500" /> : <AvatarFallback className="text-sm dark:text-white text-black">
                 {user?.user_metadata?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
               </AvatarFallback> : <AvatarImage src="https://i.ibb.co/6JWhNYQF/photo-2025-04-21-16-32-07-removebg-preview.png" alt="SenterosAI" className="h-full w-full object-contain p-1 bg-transparent" />}
@@ -86,7 +90,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                 ...props
               }: CodeProps) => {
                 const match = /language-(\w+)/.exec(className || '');
-                return !inline ? <SyntaxHighlighter style={oneDark} language={match ? match[1] : undefined} PreTag="div" className="rounded-md my-2" {...props}>
+                return !inline ? <SyntaxHighlighter 
+                          style={isDarkMode ? oneDark : oneLight} 
+                          language={match ? match[1] : undefined} 
+                          PreTag="div" 
+                          className="rounded-md my-2 bg-gray-100 dark:bg-gray-800" 
+                          {...props}>
                             {String(children).replace(/\n$/, '')}
                           </SyntaxHighlighter> : <code className={className} {...props}>
                             {children}

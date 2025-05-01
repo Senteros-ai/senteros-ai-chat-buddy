@@ -123,6 +123,22 @@ body {
   margin-left: 1rem;
 }
 
+/* Code block styling */
+.prose pre {
+  background-color: #f6f8fa;  /* Light theme code background */
+  border-radius: 0.5rem;
+}
+
+.dark .prose pre {
+  background-color: #1e1e1e;  /* Dark theme code background */
+}
+
+/* Improved message styling */
+.message-content {
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
 /* Animations */
 @keyframes fade-in {
   from {

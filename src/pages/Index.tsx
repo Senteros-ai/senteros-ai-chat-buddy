@@ -250,17 +250,17 @@ const Index = () => {
         <div className="flex-1 overflow-y-auto p-4">
           {messages.length === 0 ? (
             <div className="flex h-full items-center justify-center">
-              <div className="text-center space-y-4 p-4 max-w-md bg-card/50 rounded-xl shadow-md backdrop-blur-sm">
-                <img
-                  src="https://i.ibb.co/xKtY6RXz/Chat-GPT-Image-1-2025-17-16-51.png"
-                  alt="SenterosAI"
-                  className="w-20 h-20 mx-auto animate-bounce-slight bg-transparent"
-                />
-                <h2 className="text-2xl font-bold">{language === 'ru' ? 'Привет! Я SenterosAI на базе Mistral' : 'Hello! I am SenterosAI powered by Mistral'}</h2>
+              <div className="text-center space-y-4 p-8 max-w-md bg-card/70 rounded-xl shadow-lg backdrop-blur-sm border border-border/30">
+                <div className="flex justify-center">
+                  <img
+                    src="https://i.ibb.co/6JWhNYQF/photo-2025-04-21-16-32-07-removebg-preview.png"
+                    alt="SenterosAI"
+                    className="w-24 h-24 animate-bounce-slight bg-transparent"
+                  />
+                </div>
+                <h2 className="text-2xl font-bold">{texts.welcome}</h2>
                 <p className="text-muted-foreground">
-                  {language === 'ru' 
-                    ? 'Я супер-дружелюбный и полезный ассистент, готовый помочь вам с любыми вопросами! (●\'◡\'●)' 
-                    : 'I am a super-friendly and helpful assistant, ready to help you with any questions! (●\'◡\'●)'}
+                  {texts.description}
                 </p>
               </div>
             </div>
