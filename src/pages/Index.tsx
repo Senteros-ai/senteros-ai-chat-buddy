@@ -31,10 +31,13 @@ const Index = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [animateLastMessage, setAnimateLastMessage] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [language, setLanguage] = useState<'ru' | 'en'>('ru');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const stopGenerationRef = useRef<boolean>(false);
+  const animationRef = useRef<(() => void) | null>(null);
 
   // Apply theme from localStorage
   useEffect(() => {
@@ -141,6 +144,15 @@ const Index = () => {
     }
   };
 
+  const handleStopGeneration = () => {
+    stopGenerationRef.current = true;
+    if (animationRef.current) {
+      animationRef.current();
+    }
+    setIsGenerating(false);
+    setIsThinking(false);
+  };
+
   const handleSendMessage = async (content: string, imageUrl?: string) => {
     if (!content.trim() && !imageUrl) return;
 
@@ -154,6 +166,8 @@ const Index = () => {
     setMessages(updatedMessages);
     setIsLoading(true);
     setIsThinking(true); // Show thinking indicator
+    setIsGenerating(true); // Show stop button
+    stopGenerationRef.current = false;
 
     try {
       let chatId = currentChatId;
@@ -172,23 +186,25 @@ const Index = () => {
         await saveChatMessage(chatId, userMessage);
       }
 
-      // Get assistant response
-      const assistantMessage = await generateChatCompletion(updatedMessages);
-      
-      // Save assistant message
-      if (chatId) {
-        await saveChatMessage(chatId, assistantMessage);
-      }
+      // Get assistant response only if generation wasn't stopped
+      if (!stopGenerationRef.current) {
+        const assistantMessage = await generateChatCompletion(updatedMessages);
+        
+        // Save assistant message
+        if (chatId) {
+          await saveChatMessage(chatId, assistantMessage);
+        }
 
-      // Update messages and enable animation
-      setIsThinking(false);
-      updatedMessages = [...updatedMessages, assistantMessage];
-      setAnimateLastMessage(true); // Enable animation for the new message
-      setMessages(updatedMessages);
-      
-      // For new chats or chats with default title, generate AI title
-      if (isNewChat) {
-        generateAITitle(chatId, updatedMessages);
+        // Update messages and enable animation
+        setIsThinking(false);
+        updatedMessages = [...updatedMessages, assistantMessage];
+        setAnimateLastMessage(true); // Enable animation for the new message
+        setMessages(updatedMessages);
+        
+        // For new chats or chats with default title, generate AI title
+        if (isNewChat) {
+          generateAITitle(chatId, updatedMessages);
+        }
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -201,6 +217,8 @@ const Index = () => {
       });
     } finally {
       setIsLoading(false);
+      setIsGenerating(false);
+      stopGenerationRef.current = false;
     }
   };
 
@@ -286,7 +304,12 @@ const Index = () => {
           )}
         </div>
         
-        <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} />
+        <ChatInput 
+          onSendMessage={handleSendMessage} 
+          onStopGeneration={handleStopGeneration}
+          isGenerating={isGenerating}
+          disabled={isLoading && !isGenerating}  
+        />
       </div>
     </div>
   );

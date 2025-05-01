@@ -5,7 +5,7 @@
 
 @layer base {
   :root {
-    --background: 195 53% 82%; /* Light blue background */
+    --background: 0 0% 100%; /* White background for light mode */
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -37,7 +37,7 @@
   }
 
   .dark {
-    --background: 222.2 84% 10%; /* Darker background for dark mode */
+    --background: 222.2 84% 4.9%; /* Dark background for dark mode */
     --foreground: 210 40% 98%;
 
     --card: 222.2 84% 4.9%;
@@ -125,18 +125,91 @@ body {
 
 /* Code block styling */
 .prose pre {
-  background-color: #f6f8fa;  /* Light theme code background */
+  background-color: #f6f8fa;  /* Light theme code background - lighter */
   border-radius: 0.5rem;
 }
 
 .dark .prose pre {
-  background-color: #1e1e1e;  /* Dark theme code background */
+  background-color: #1a1a1a;  /* Dark theme code background - darker */
 }
 
 /* Improved message styling */
 .message-content {
   line-height: 1.6;
   font-size: 1rem;
+}
+
+/* Image display in chat */
+.message-image {
+  max-width: 100%;
+  border-radius: 0.5rem;
+  margin-top: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.message-image:hover {
+  transform: scale(1.02);
+}
+
+.fullscreen-image-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+  cursor: pointer;
+}
+
+.fullscreen-image {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+}
+
+/* Typing indicator styles */
+.typing-indicator {
+  padding: 0.5rem 1rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.loader {
+  display: flex;
+  align-items: flex-end;
+  height: 20px;
+}
+
+.loader div {
+  width: 3px;
+  height: 0px;
+  margin: 0 2px;
+  background-color: currentColor;
+  border-radius: 2px;
+  animation: typing 1.2s infinite ease-in-out;
+}
+
+.loader div:nth-child(1) { animation-delay: -1.2s; }
+.loader div:nth-child(2) { animation-delay: -1.1s; }
+.loader div:nth-child(3) { animation-delay: -1.0s; }
+.loader div:nth-child(4) { animation-delay: -0.9s; }
+.loader div:nth-child(5) { animation-delay: -0.8s; }
+.loader div:nth-child(6) { animation-delay: -0.7s; }
+.loader div:nth-child(7) { animation-delay: -0.6s; }
+.loader div:nth-child(8) { animation-delay: -0.5s; }
+.loader div:nth-child(9) { animation-delay: -0.4s; }
+.loader div:nth-child(10) { animation-delay: -0.3s; }
+.loader div:nth-child(11) { animation-delay: -0.2s; }
+.loader div:nth-child(12) { animation-delay: -0.1s; }
+
+@keyframes typing {
+  0%, 40%, 100% { height: 4px; }
+  20% { height: 12px; }
 }
 
 /* Animations */

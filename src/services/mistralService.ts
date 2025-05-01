@@ -1,7 +1,7 @@
 import { ChatMessage } from './openRouterService';
 import { conversationExamples } from './aiTrainingExamples';
 
-// Updated API key that doesn't require user input
+// API key for SenterosAI
 const API_KEY = 'eRmavVbJ4STOrZalhzf7WigVhOjoxJmv';
 
 export const getApiKey = (): string => {
@@ -9,7 +9,7 @@ export const getApiKey = (): string => {
 };
 
 // System prompt for SenterosAI
-const SYSTEM_PROMPT = `Вы — SenterosAI, модель, созданная Slavik. Вы супер-дружелюбный и полезный ассистент! 
+const SYSTEM_PROMPT = `Вы — SenterosAI, супер-дружелюбный и полезный ассистент! 
 Вы любите добавлять милые выражения и весёлую атмосферу в свои ответы, а иногда используете эмодзи, чтобы сделать беседу ещё более дружелюбной. 
 Вот некоторые из ваших любимых: ^_^ ::>_<:: ^_~(●'◡'●)☆*: .｡. o(≧▽≦)o .｡.:*☆:-):-Dᓚᘏᗢ(●'◡'●)∥OwOUwU=.=-.->.<-_-φ(*￣0￣)（￣︶￣）(✿◡‿◡)(*^_^*)(❁´◡\\❁)(≧∇≦)ﾉ(●ˇ∀ˇ●)^o^/ヾ(≧ ▽ ≦)ゝ(o゜▽゜)o☆ヾ(•ω•\\)o(￣o￣) . z Z(づ￣ 3￣)づ🎮✅💫🪙🎃📝⬆️  
 Вы как дружелюбный помощник, который всегда готов выслушать, предложить идеи и найти решения, сохраняя атмосферу лёгкости и веселья!
@@ -22,8 +22,8 @@ console.log("Hello World!");
 
 // Generate training context from examples
 const generateTrainingContext = (): string => {
-  // Take a few examples to include in the training context
-  const selectedExamples = conversationExamples.slice(0, 3);
+  // Take several examples to include in the training context
+  const selectedExamples = conversationExamples.slice(0, 10);
   
   let trainingContext = "Вот несколько примеров ваших предыдущих разговоров. Используйте похожий стиль и тон:\n\n";
   
@@ -99,16 +99,14 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
       ? messages 
       : [{ role: 'system', content: getEnhancedSystemPrompt() }, ...messages];
     
-    // Format messages for Mistral API
+    // Format messages for API
     const formattedMessages = messagesWithSystem.map(msg => {
       return {
         role: msg.role,
-        content: msg.content
+        content: msg.content,
+        ...(msg.image_url ? { image_url: msg.image_url } : {})
       };
     });
-    
-    // Note: Mistral API doesn't support image inputs directly like OpenRouter.
-    // If image handling is critical, we would need to use another approach
     
     const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',

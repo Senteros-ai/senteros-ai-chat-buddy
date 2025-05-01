@@ -2,17 +2,19 @@
 import React, { useState, useRef, KeyboardEvent, ChangeEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { SendHorizonal, ImageIcon, X } from "lucide-react";
+import { SendHorizonal, ImageIcon, X, StopCircle } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 import YandexAdManager from './YandexAdManager';
 
 interface ChatInputProps {
   onSendMessage: (message: string, imageUrl?: string) => void;
+  onStopGeneration?: () => void;
+  isGenerating?: boolean;
   disabled?: boolean;
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled }) => {
+const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onStopGeneration, isGenerating = false, disabled }) => {
   const [message, setMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -125,7 +127,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled }) => {
             onKeyDown={handleKeyDown}
             placeholder="Message SenterosAI..."
             className="min-h-[80px] resize-none pr-20"
-            disabled={disabled || isUploading}
+            disabled={disabled || isUploading || isGenerating}
           />
           <div className="absolute bottom-2 right-2 flex space-x-2">
             <input
@@ -134,24 +136,37 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled }) => {
               onChange={handleFileChange}
               accept="image/*"
               className="hidden"
-              disabled={disabled || isUploading}
+              disabled={disabled || isUploading || isGenerating}
             />
-            <Button
-              size="icon" 
-              variant="ghost"
-              onClick={handleImageButtonClick}
-              disabled={disabled || isUploading}
-              type="button"
-            >
-              <ImageIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              size="icon"
-              onClick={handleSubmit}
-              disabled={(!message.trim() && !imageFile) || disabled || isUploading}
-            >
-              <SendHorizonal className="h-4 w-4" />
-            </Button>
+            {!isGenerating && (
+              <Button
+                size="icon" 
+                variant="ghost"
+                onClick={handleImageButtonClick}
+                disabled={disabled || isUploading || isGenerating}
+                type="button"
+              >
+                <ImageIcon className="h-4 w-4" />
+              </Button>
+            )}
+            {isGenerating ? (
+              <Button
+                size="icon"
+                variant="destructive"
+                onClick={onStopGeneration}
+                type="button"
+              >
+                <StopCircle className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                size="icon"
+                onClick={handleSubmit}
+                disabled={(!message.trim() && !imageFile) || disabled || isUploading}
+              >
+                <SendHorizonal className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </div>
