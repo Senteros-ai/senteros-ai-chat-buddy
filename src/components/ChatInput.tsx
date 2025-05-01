@@ -2,10 +2,12 @@
 import React, { useState, useRef, KeyboardEvent, ChangeEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { SendHorizonal, ImageIcon, X, StopCircle } from "lucide-react";
+import { SendHorizonal, ImageIcon, X, StopCircle, Mic } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 import YandexAdManager from './YandexAdManager';
+import VoiceRecordingModal from './VoiceRecordingModal';
+import { blobToBase64, transcribeVoice } from '@/services/voiceService';
 
 interface ChatInputProps {
   onSendMessage: (message: string, imageUrl?: string) => void;
@@ -20,6 +22,8 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onStopGeneration, 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [showAd, setShowAd] = useState(false);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -102,10 +106,48 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onStopGeneration, 
       fileInputRef.current.click();
     }
   };
+  
+  const handleVoiceButtonClick = () => {
+    setIsVoiceModalOpen(true);
+  };
+  
+  const handleVoiceModalClose = () => {
+    setIsVoiceModalOpen(false);
+  };
+  
+  const handleRecordingComplete = async (audioBlob: Blob) => {
+    try {
+      setIsTranscribing(true);
+      setIsVoiceModalOpen(false);
+      
+      // Заглушка для демонстрации, в реальном приложении здесь будет вызов API
+      // const transcription = await transcribeVoice(audioBlob);
+      
+      // Временная заглушка - имитация задержки распознавания
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      const transcription = "Это тестовое голосовое сообщение для SenterosAI.";
+      
+      setMessage(transcription);
+      setIsTranscribing(false);
+      
+      // Автоматически отправляем сообщение после распознавания
+      if (transcription) {
+        onSendMessage(transcription);
+      }
+    } catch (error) {
+      console.error('Ошибка при обработке голосового сообщения:', error);
+      setIsTranscribing(false);
+    }
+  };
 
   return (
     <div className="border-t p-4 dark:border-gray-700">
       <YandexAdManager trigger={showAd} onClose={handleAdClosed} />
+      <VoiceRecordingModal 
+        isOpen={isVoiceModalOpen}
+        onClose={handleVoiceModalClose}
+        onRecordingComplete={handleRecordingComplete}
+      />
       <div className="max-w-3xl mx-auto flex flex-col space-y-4">
         {imagePreview && (
           <div className="relative inline-block w-24 h-24">
@@ -125,9 +167,9 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onStopGeneration, 
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Message SenterosAI..."
+            placeholder={isTranscribing ? "Распознавание речи..." : "Message SenterosAI..."}
             className="min-h-[80px] resize-none pr-20"
-            disabled={disabled || isUploading || isGenerating}
+            disabled={disabled || isUploading || isGenerating || isTranscribing}
           />
           <div className="absolute bottom-2 right-2 flex space-x-2">
             <input
@@ -138,16 +180,28 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onStopGeneration, 
               className="hidden"
               disabled={disabled || isUploading || isGenerating}
             />
-            {!isGenerating && (
-              <Button
-                size="icon" 
-                variant="ghost"
-                onClick={handleImageButtonClick}
-                disabled={disabled || isUploading || isGenerating}
-                type="button"
-              >
-                <ImageIcon className="h-4 w-4" />
-              </Button>
+            {!isGenerating && !isTranscribing && (
+              <>
+                <Button
+                  size="icon" 
+                  variant="ghost"
+                  onClick={handleVoiceButtonClick}
+                  disabled={disabled || isUploading || isGenerating}
+                  type="button"
+                  className="text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-white"
+                >
+                  <Mic className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="icon" 
+                  variant="ghost"
+                  onClick={handleImageButtonClick}
+                  disabled={disabled || isUploading || isGenerating}
+                  type="button"
+                >
+                  <ImageIcon className="h-4 w-4" />
+                </Button>
+              </>
             )}
             {isGenerating ? (
               <Button
@@ -162,7 +216,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onStopGeneration, 
               <Button
                 size="icon"
                 onClick={handleSubmit}
-                disabled={(!message.trim() && !imageFile) || disabled || isUploading}
+                disabled={(!message.trim() && !imageFile) || disabled || isUploading || isTranscribing}
               >
                 <SendHorizonal className="h-4 w-4" />
               </Button>
