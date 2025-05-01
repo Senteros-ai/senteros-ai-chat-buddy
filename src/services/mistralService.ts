@@ -1,7 +1,8 @@
+
 import { ChatMessage } from './openRouterService';
 
-// Fixed API key that doesn't require user input
-const API_KEY = 'CGu9EpjTwGsq6kevp85JseYstdaLwxH1';
+// Updated API key that doesn't require user input
+const API_KEY = 'eRmavVbJ4STOrZalhzf7WigVhOjoxJmv';
 
 export const getApiKey = (): string => {
   return API_KEY;
@@ -96,7 +97,7 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
         'Authorization': `Bearer ${getApiKey()}`,
       },
       body: JSON.stringify({
-        model: 'mistral-small',
+        model: 'mistral-small-latest',
         messages: formattedMessages,
         temperature: 0.7,
         max_tokens: 2048,
@@ -156,7 +157,7 @@ export const generateChatTitle = async (messages: ChatMessage[]): Promise<string
         'Authorization': `Bearer ${getApiKey()}`,
       },
       body: JSON.stringify({
-        model: 'mistral-small',
+        model: 'mistral-small-latest',
         messages: titlePrompt,
         max_tokens: 30,
         temperature: 0.5,
