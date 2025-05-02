@@ -33,6 +33,41 @@ export type Database = {
         }
         Relationships: []
       }
+      comments: {
+        Row: {
+          author_name: string
+          content: string
+          created_at: string
+          dream_id: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          author_name: string
+          content: string
+          created_at?: string
+          dream_id: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          author_name?: string
+          content?: string
+          created_at?: string
+          dream_id?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_dream_id_fkey"
+            columns: ["dream_id"]
+            isOneToOne: false
+            referencedRelation: "dreams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       donations: {
         Row: {
           amount: number
@@ -76,7 +111,9 @@ export type Database = {
           amount: number
           author_id: string | null
           author_name: string
+          category: Database["public"]["Enums"]["dream_category"] | null
           collected: number | null
+          comments_count: number | null
           created_at: string | null
           description: string
           id: string
@@ -89,7 +126,9 @@ export type Database = {
           amount: number
           author_id?: string | null
           author_name: string
+          category?: Database["public"]["Enums"]["dream_category"] | null
           collected?: number | null
+          comments_count?: number | null
           created_at?: string | null
           description: string
           id?: string
@@ -102,7 +141,9 @@ export type Database = {
           amount?: number
           author_id?: string | null
           author_name?: string
+          category?: Database["public"]["Enums"]["dream_category"] | null
           collected?: number | null
+          comments_count?: number | null
           created_at?: string | null
           description?: string
           id?: string
@@ -112,6 +153,35 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      favorites: {
+        Row: {
+          created_at: string
+          dream_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dream_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dream_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_dream_id_fkey"
+            columns: ["dream_id"]
+            isOneToOne: false
+            referencedRelation: "dreams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       messages: {
         Row: {
@@ -361,7 +431,17 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      dream_category:
+        | "Образование"
+        | "Здоровье"
+        | "Искусство"
+        | "Спорт"
+        | "Технологии"
+        | "Экология"
+        | "Благотворительность"
+        | "Путешествия"
+        | "Бизнес"
+        | "Другое"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -476,6 +556,19 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      dream_category: [
+        "Образование",
+        "Здоровье",
+        "Искусство",
+        "Спорт",
+        "Технологии",
+        "Экология",
+        "Благотворительность",
+        "Путешествия",
+        "Бизнес",
+        "Другое",
+      ],
+    },
   },
 } as const

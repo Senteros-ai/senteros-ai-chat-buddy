@@ -41,6 +41,32 @@ const getEnhancedSystemPrompt = (): string => {
   return `${SYSTEM_PROMPT}\n\n${generateTrainingContext()}`;
 };
 
+// Get user info from profile for AI context
+const getUserProfileContext = (): string => {
+  try {
+    const userData = {
+      username: localStorage.getItem('username') || '',
+      age: localStorage.getItem('userAge') || '',
+      location: localStorage.getItem('userLocation') || '',
+      bio: localStorage.getItem('userBio') || ''
+    };
+    
+    // Only create context if there's actual data
+    if (userData.username || userData.age || userData.location || userData.bio) {
+      let context = "Информация о пользователе для контекста:\n";
+      if (userData.username) context += `Имя: ${userData.username}\n`;
+      if (userData.age) context += `Возраст: ${userData.age}\n`;
+      if (userData.location) context += `Местоположение: ${userData.location}\n`;
+      if (userData.bio) context += `О себе: ${userData.bio}\n`;
+      return context;
+    }
+    return '';
+  } catch (error) {
+    console.error('Error getting user profile context:', error);
+    return '';
+  }
+};
+
 // Usage tracking functions
 const getLimits = () => {
   return {
@@ -73,6 +99,26 @@ const checkUsageLimits = (type: 'requests' | 'images'): boolean => {
   return currentUsage < limit;
 };
 
+// Get model based on content (use Mistral Large for images)
+const getModelForContent = (messages: ChatMessage[]): string => {
+  // Check if there are image attachments in the latest user message
+  const lastUserMessage = [...messages].reverse().find(msg => msg.role === 'user');
+  const hasImage = lastUserMessage && 'image_url' in lastUserMessage && lastUserMessage.image_url;
+  
+  // Use Mistral Large for image processing to avoid completions errors
+  return hasImage ? 'mistral-large-latest' : 'mistral-small-latest';
+};
+
+// Store user profile data from Supabase in localStorage for AI context
+export const syncUserProfileToLocalStorage = (userData: any) => {
+  if (!userData) return;
+  
+  if (userData.username) localStorage.setItem('username', userData.username);
+  if (userData.age) localStorage.setItem('userAge', userData.age);
+  if (userData.location) localStorage.setItem('userLocation', userData.location);
+  if (userData.bio) localStorage.setItem('userBio', userData.bio);
+};
+
 export const generateChatCompletion = async (messages: ChatMessage[]): Promise<ChatMessage> => {
   try {
     // Check if the daily request limit has been reached
@@ -95,10 +141,18 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
       };
     }
     
+    // Get user profile context if available
+    const userProfileContext = getUserProfileContext();
+    
+    // Create system message with user context
+    const systemContent = userProfileContext 
+      ? `${getEnhancedSystemPrompt()}\n\n${userProfileContext}` 
+      : getEnhancedSystemPrompt();
+    
     // Add system message if not already present
     const messagesWithSystem = messages.some(msg => msg.role === 'system') 
       ? messages 
-      : [{ role: 'system', content: getEnhancedSystemPrompt() }, ...messages];
+      : [{ role: 'system', content: systemContent }, ...messages];
     
     // Format messages for API
     const formattedMessages = messagesWithSystem.map(msg => {
@@ -116,6 +170,9 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
       };
     });
     
+    // Select appropriate model based on content
+    const model = getModelForContent(messages);
+    
     const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -123,7 +180,7 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
         'Authorization': `Bearer ${getApiKey()}`,
       },
       body: JSON.stringify({
-        model: 'mistral-small-latest',
+        model: model,
         messages: formattedMessages,
         temperature: 0.7,
         max_tokens: 2048,

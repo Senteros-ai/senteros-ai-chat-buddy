@@ -11,6 +11,8 @@ import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Settings from "./pages/Settings";
 import { useEffect } from "react";
+import { syncUserProfileToLocalStorage } from "./services/mistralService";
+import { supabase } from "./integrations/supabase/client";
 
 const queryClient = new QueryClient();
 
@@ -58,10 +60,23 @@ const initializeBrowserLanguage = () => {
   }
 };
 
+// Sync user profile data from Supabase to localStorage
+const syncUserProfile = async () => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user && user.user_metadata) {
+      syncUserProfileToLocalStorage(user.user_metadata);
+    }
+  } catch (error) {
+    console.error('Error syncing user profile:', error);
+  }
+};
+
 const AppWithTheme = () => {
   useEffect(() => {
     initializeBrowserLanguage();
     applyStoredTheme();
+    syncUserProfile();
     const cleanup = setupThemeListener();
     
     // Update document title for SEO
