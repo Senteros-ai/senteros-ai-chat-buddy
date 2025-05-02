@@ -1,8 +1,7 @@
-
 import React, { useState, useRef, KeyboardEvent, ChangeEvent, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PaperPlaneIcon, StopCircle, ImageIcon, Mic } from "lucide-react";
+import { Send, StopCircle, ImageIcon, Mic } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/components/ui/use-toast";
 
@@ -210,7 +209,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
               </>
             ) : (
               <>
-                <PaperPlaneIcon className="h-5 w-5 mr-2" />
+                <Send className="h-5 w-5 mr-2" />
                 {isRussian ? "Отправить" : "Send"}
               </>
             )}

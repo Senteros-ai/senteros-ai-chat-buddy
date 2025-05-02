@@ -33,8 +33,10 @@ const ensureAvatarBucketExists = async () => {
 };
 
 const Settings = () => {
-  // ... keep existing code (useState, useEffect, etc.) the same
-
+  // Add the missing state variables
+  const [language, setLanguage] = useState<Language>('ru');
+  const [theme, setTheme] = useState<Theme>('system');
+  
   // Keep username and avatar, but remove age and location
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
@@ -192,6 +194,7 @@ const Settings = () => {
     signOut: language === 'ru' ? 'Выйти из аккаунта' : 'Sign out',
   };
 
+  
   return (
     <div className="container mx-auto max-w-2xl py-8">
       <div className="flex items-center mb-6">
