@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,10 +53,6 @@ const Settings = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [showSaveAd, setShowSaveAd] = useState(false);
-  // New states for user information
-  const [userAge, setUserAge] = useState('');
-  const [userLocation, setUserLocation] = useState('');
-  const [userBio, setUserBio] = useState('');
   const { toast } = useToast();
   const { user, signOut } = useAuth();
   const { language, languages, setLanguage, texts } = useAppLanguage();
@@ -71,9 +66,6 @@ const Settings = () => {
     if (user) {
       setUsername(user.user_metadata?.username || '');
       setAvatarUrl(user.user_metadata?.avatar_url || null);
-      setUserAge(user.user_metadata?.age || '');
-      setUserLocation(user.user_metadata?.location || '');
-      setUserBio(user.user_metadata?.bio || '');
     }
     
     // Apply theme
@@ -117,9 +109,6 @@ const Settings = () => {
         data: {
           username: username,
           avatar_url: avatarUrl,
-          age: userAge,
-          location: userLocation,
-          bio: userBio
         }
       });
       
@@ -239,38 +228,6 @@ const Settings = () => {
                 placeholder={texts.enterUsername}
               />
             </div>
-          </div>
-          
-          {/* New user information fields */}
-          <div className="space-y-2">
-            <Label htmlFor="user-age">{language === 'ru' ? 'Возраст' : 'Age'}</Label>
-            <Input 
-              id="user-age" 
-              value={userAge} 
-              onChange={(e) => setUserAge(e.target.value)} 
-              placeholder={language === 'ru' ? 'Укажите ваш возраст' : 'Enter your age'}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="user-location">{language === 'ru' ? 'Местоположение' : 'Location'}</Label>
-            <Input 
-              id="user-location" 
-              value={userLocation} 
-              onChange={(e) => setUserLocation(e.target.value)} 
-              placeholder={language === 'ru' ? 'Укажите ваше местоположение' : 'Enter your location'}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="user-bio">{language === 'ru' ? 'О себе' : 'About me'}</Label>
-            <Textarea 
-              id="user-bio" 
-              value={userBio} 
-              onChange={(e) => setUserBio(e.target.value)} 
-              placeholder={language === 'ru' ? 'Расскажите немного о себе...' : 'Tell us about yourself...'}
-              className="min-h-[100px]"
-            />
           </div>
           
           <Button onClick={handleUpdateProfile} className="w-full" disabled={isUploading}>
