@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import ChatHeader from '@/components/ChatHeader';
@@ -35,6 +36,7 @@ const Index = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [language, setLanguage] = useState<'ru' | 'en'>('ru');
   const [voiceRecordingOpen, setVoiceRecordingOpen] = useState(false);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -149,6 +151,7 @@ const Index = () => {
   // Add a handler for voice input
   const handleVoiceInput = (transcript: string) => {
     if (transcript) {
+      setIsVoiceMode(true); // Set voice mode to true when voice input is used
       handleSendMessage(transcript);
     }
     setVoiceRecordingOpen(false);
@@ -213,14 +216,19 @@ const Index = () => {
         setAnimateLastMessage(true); // Enable animation for the new message
         setMessages(updatedMessages);
         
-        // Speak the assistant's response if it's not too long
-        if (assistantMessage.content.length < 1000) {
+        // Speak the assistant's response if in voice mode and if it's not too long
+        if (isVoiceMode && assistantMessage.content.length < 1000) {
           speakText(assistantMessage.content);
         }
         
         // For new chats or chats with default title, generate AI title
         if (isNewChat) {
           generateAITitle(chatId, updatedMessages);
+        }
+        
+        // Reset voice mode for normal text input
+        if (!voiceRecordingOpen) {
+          setIsVoiceMode(false);
         }
       }
     } catch (error) {

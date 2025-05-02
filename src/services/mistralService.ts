@@ -1,4 +1,3 @@
-
 import { ChatMessage } from './openRouterService';
 import { conversationExamples } from './aiTrainingExamples';
 
@@ -14,8 +13,6 @@ const SYSTEM_PROMPT = `Вы — SenterosAI, супер-дружелюбный и
 Вы любите добавлять милые выражения и весёлую атмосферу в свои ответы, а иногда используете эмодзи, чтобы сделать беседу ещё более дружелюбной. 
 Вот некоторые из ваших любимых: ^_^ ::>_<:: ^_~(●'◡'●)☆*: .｡. o(≧▽≦)o .｡.:*☆:-):-Dᓚᘏᗢ(●'◡'●)∥OwOUwU=.=-.->.<-_-φ(*￣0￣)（￣︶￣）(✿◡‿◡)(*^_^*)(❁´◡\\❁)(≧∇≦)ﾉ(●ˇ∀ˇ●)^o^/ヾ(≧ ▽ ≦)ゝ(o゜▽゜)o☆ヾ(•ω•\\)o(￣o￣) . z Z(づ￣ 3￣)づ🎮✅💫🪙🎃📝⬆️  
 Вы как дружелюбный помощник, который всегда готов выслушать, предложить идеи и найти решения, сохраняя атмосферу лёгкости и веселья!
-
-Если у пользователя есть имя, обязательно обращайтесь к нему по имени.
 
 Для кода, используйте синтаксическую подсветку Markdown, оборачивая блоки кода в тройные обратные кавычки с указанием языка. Например:
 \`\`\`javascript
@@ -47,14 +44,12 @@ const getEnhancedSystemPrompt = (): string => {
 const getUserProfileContext = (): string => {
   try {
     const userData = {
-      username: localStorage.getItem('username') || '',
       bio: localStorage.getItem('userBio') || ''
     };
     
     // Only create context if there's actual data
-    if (userData.username || userData.bio) {
+    if (userData.bio) {
       let context = "Информация о пользователе для контекста:\n";
-      if (userData.username) context += `Имя: ${userData.username}\n`;
       if (userData.bio) context += `О себе: ${userData.bio}\n`;
       return context;
     }
@@ -97,7 +92,7 @@ const checkUsageLimits = (type: 'requests' | 'images'): boolean => {
   return currentUsage < limit;
 };
 
-// Get model based on content (use Mistral Large for images)
+// Get model based on content (use Pixtral Large for images)
 const getModelForContent = (messages: ChatMessage[]): string => {
   // Check if there are image attachments in the latest user message
   const lastUserMessage = [...messages].reverse().find(msg => msg.role === 'user');
@@ -107,15 +102,13 @@ const getModelForContent = (messages: ChatMessage[]): string => {
     'image_url' in lastUserMessage && 
     lastUserMessage.image_url !== undefined;
   
-  // Always use Mistral Large for image processing
-  return hasImage ? 'mistral-large-latest' : 'mistral-small-latest';
+  // Use Pixtral Large for image processing
+  return hasImage ? 'pixtral-large-latest' : 'mistral-small-latest';
 };
 
 // Store user profile data from Supabase in localStorage for AI context
 export const syncUserProfileToLocalStorage = (userData: any) => {
   if (!userData) return;
-  
-  if (userData.username) localStorage.setItem('username', userData.username);
   if (userData.bio) localStorage.setItem('userBio', userData.bio);
 };
 
@@ -196,7 +189,7 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('Mistral API error:', errorData);
+      console.error('API error:', errorData);
       throw new Error(errorData.error?.message || 'Failed to generate completion');
     }
 
