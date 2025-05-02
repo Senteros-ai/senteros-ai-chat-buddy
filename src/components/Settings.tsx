@@ -33,9 +33,11 @@ const ensureAvatarBucketExists = async () => {
 };
 
 const Settings = () => {
-  const [language, setLanguage] = useState<Language>('ru');
-  const [theme, setTheme] = useState<Theme>('system');
+  // ... keep existing code (useState, useEffect, etc.) the same
+
+  // Keep username and avatar, but remove age and location
   const [username, setUsername] = useState('');
+  const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
@@ -51,6 +53,7 @@ const Settings = () => {
     
     if (user) {
       setUsername(user.user_metadata?.username || '');
+      setBio(user.user_metadata?.bio || '');
       setAvatarUrl(user.user_metadata?.avatar_url || null);
     }
   }, [user]);
@@ -84,11 +87,16 @@ const Settings = () => {
       const { error } = await supabase.auth.updateUser({
         data: {
           username: username,
+          bio: bio,
           avatar_url: avatarUrl
         }
       });
       
       if (error) throw error;
+      
+      // Also update local storage for the AI context
+      localStorage.setItem('username', username);
+      localStorage.setItem('userBio', bio);
       
       toast({
         title: language === 'ru' ? "Профиль обновлен" : "Profile updated",
@@ -174,6 +182,8 @@ const Settings = () => {
     manageProfile: language === 'ru' ? 'Управление профилем' : 'Manage your profile',
     username: language === 'ru' ? 'Имя пользователя' : 'Username',
     enterUsername: language === 'ru' ? 'Введите имя пользователя' : 'Enter username',
+    bio: language === 'ru' ? 'О себе' : 'About me',
+    enterBio: language === 'ru' ? 'Расскажите о себе' : 'Tell us about yourself',
     avatar: language === 'ru' ? 'Аватар' : 'Avatar',
     uploadAvatar: language === 'ru' ? 'Загрузить аватар' : 'Upload avatar',
     updateProfile: language === 'ru' ? 'Обновить профиль' : 'Update profile',
@@ -234,6 +244,17 @@ const Settings = () => {
               />
             </div>
           </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="bio">{texts.bio}</Label>
+            <Input 
+              id="bio" 
+              value={bio} 
+              onChange={(e) => setBio(e.target.value)} 
+              placeholder={texts.enterBio}
+            />
+          </div>
+          
           <Button onClick={handleUpdateProfile} className="w-full" disabled={isUploading}>
             {texts.updateProfile}
           </Button>

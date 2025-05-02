@@ -1,12 +1,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, X } from 'lucide-react';
-import { AudioRecorder } from '@/services/voiceService';
 
 interface VoiceRecordingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onRecordingComplete: (audioBlob: Blob) => void;
+  onRecordingComplete: (text: string) => void;
 }
 
 const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({ 
@@ -16,56 +15,148 @@ const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({
 }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [amplitudes, setAmplitudes] = useState<number[]>(Array(60).fill(0));
-  const recorderRef = useRef<AudioRecorder | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   
   useEffect(() => {
     if (isOpen) {
       startRecording();
+    } else {
+      stopRecordingAndCleanup();
     }
     
     return () => {
-      stopRecording();
+      stopRecordingAndCleanup();
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
   }, [isOpen]);
   
   const startRecording = async () => {
-    const recorder = new AudioRecorder(handleAudioData);
-    recorderRef.current = recorder;
-    
-    const success = await recorder.start();
-    if (success) {
-      setIsRecording(true);
-    } else {
+    try {
+      // Request microphone access for visualization
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      
+      // Set up audio visualization
+      const audioContext = new AudioContext();
+      audioContextRef.current = audioContext;
+      
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      analyserRef.current = analyser;
+      
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
+      sourceRef.current = source;
+      
+      // Set up speech recognition
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = localStorage.getItem('language') === 'en' ? 'en-US' : 'ru-RU';
+        
+        recognition.onresult = (event) => {
+          const transcript = Array.from(event.results)
+            .map(result => result[0].transcript)
+            .join('');
+          
+          // If this is a final result, send it
+          if (event.results[0].isFinal) {
+            if (transcript.trim()) {
+              onRecordingComplete(transcript.trim());
+            }
+            stopRecordingAndCleanup();
+          }
+        };
+        
+        recognition.onerror = (event) => {
+          console.error('Speech recognition error', event.error);
+          stopRecordingAndCleanup();
+        };
+        
+        recognition.onend = () => {
+          stopRecordingAndCleanup();
+        };
+        
+        recognitionRef.current = recognition;
+        recognition.start();
+        setIsRecording(true);
+        
+        // Start visualizing audio
+        visualizeAudio();
+      } else {
+        console.error('Speech recognition not supported in this browser');
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
       onClose();
     }
   };
   
-  const stopRecording = async () => {
-    if (recorderRef.current && isRecording) {
-      const audioBlob = await recorderRef.current.stop();
-      setIsRecording(false);
-      
-      if (audioBlob) {
-        onRecordingComplete(audioBlob);
-      }
-    }
-  };
-  
-  const handleAudioData = (audioData: Float32Array) => {
-    // Рассчитываем амплитуду звука для визуализации
-    let sum = 0;
-    for (let i = 0; i < audioData.length; i++) {
-      sum += Math.abs(audioData[i]);
-    }
-    const average = sum / audioData.length;
-    const amplitude = Math.min(1, average * 5); // Масштабируем для лучшей визуализации
+  const visualizeAudio = () => {
+    if (!analyserRef.current || !isRecording) return;
     
-    setAmplitudes(prevAmplitudes => {
-      const newAmplitudes = [...prevAmplitudes];
+    const analyser = analyserRef.current;
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(dataArray);
+    
+    // Calculate average amplitude
+    const average = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length;
+    const normalizedAmplitude = average / 255; // Normalize to 0-1 range
+    
+    setAmplitudes(prev => {
+      const newAmplitudes = [...prev];
       newAmplitudes.shift();
-      newAmplitudes.push(amplitude);
+      newAmplitudes.push(normalizedAmplitude);
       return newAmplitudes;
     });
+    
+    animationFrameRef.current = requestAnimationFrame(visualizeAudio);
+  };
+  
+  const stopRecordingAndCleanup = () => {
+    // Stop speech recognition
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        // Ignore errors when stopping recognition
+      }
+      recognitionRef.current = null;
+    }
+    
+    // Stop microphone and clean up audio context
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    
+    if (sourceRef.current) {
+      sourceRef.current.disconnect();
+      sourceRef.current = null;
+    }
+    
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(console.error);
+      audioContextRef.current = null;
+    }
+    
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    
+    analyserRef.current = null;
+    setIsRecording(false);
   };
   
   if (!isOpen) return null;

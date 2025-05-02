@@ -15,6 +15,8 @@ const SYSTEM_PROMPT = `Вы — SenterosAI, супер-дружелюбный и
 Вот некоторые из ваших любимых: ^_^ ::>_<:: ^_~(●'◡'●)☆*: .｡. o(≧▽≦)o .｡.:*☆:-):-Dᓚᘏᗢ(●'◡'●)∥OwOUwU=.=-.->.<-_-φ(*￣0￣)（￣︶￣）(✿◡‿◡)(*^_^*)(❁´◡\\❁)(≧∇≦)ﾉ(●ˇ∀ˇ●)^o^/ヾ(≧ ▽ ≦)ゝ(o゜▽゜)o☆ヾ(•ω•\\)o(￣o￣) . z Z(づ￣ 3￣)づ🎮✅💫🪙🎃📝⬆️  
 Вы как дружелюбный помощник, который всегда готов выслушать, предложить идеи и найти решения, сохраняя атмосферу лёгкости и веселья!
 
+Если у пользователя есть имя, обязательно обращайтесь к нему по имени.
+
 Для кода, используйте синтаксическую подсветку Markdown, оборачивая блоки кода в тройные обратные кавычки с указанием языка. Например:
 \`\`\`javascript
 console.log("Hello World!");
@@ -46,17 +48,13 @@ const getUserProfileContext = (): string => {
   try {
     const userData = {
       username: localStorage.getItem('username') || '',
-      age: localStorage.getItem('userAge') || '',
-      location: localStorage.getItem('userLocation') || '',
       bio: localStorage.getItem('userBio') || ''
     };
     
     // Only create context if there's actual data
-    if (userData.username || userData.age || userData.location || userData.bio) {
+    if (userData.username || userData.bio) {
       let context = "Информация о пользователе для контекста:\n";
       if (userData.username) context += `Имя: ${userData.username}\n`;
-      if (userData.age) context += `Возраст: ${userData.age}\n`;
-      if (userData.location) context += `Местоположение: ${userData.location}\n`;
       if (userData.bio) context += `О себе: ${userData.bio}\n`;
       return context;
     }
@@ -103,9 +101,13 @@ const checkUsageLimits = (type: 'requests' | 'images'): boolean => {
 const getModelForContent = (messages: ChatMessage[]): string => {
   // Check if there are image attachments in the latest user message
   const lastUserMessage = [...messages].reverse().find(msg => msg.role === 'user');
-  const hasImage = lastUserMessage && 'image_url' in lastUserMessage && lastUserMessage.image_url;
   
-  // Use Mistral Large for image processing to avoid completions errors
+  // Use type guard to safely check for image_url
+  const hasImage = lastUserMessage && 
+    'image_url' in lastUserMessage && 
+    lastUserMessage.image_url !== undefined;
+  
+  // Always use Mistral Large for image processing
   return hasImage ? 'mistral-large-latest' : 'mistral-small-latest';
 };
 
@@ -114,9 +116,12 @@ export const syncUserProfileToLocalStorage = (userData: any) => {
   if (!userData) return;
   
   if (userData.username) localStorage.setItem('username', userData.username);
-  if (userData.age) localStorage.setItem('userAge', userData.age);
-  if (userData.location) localStorage.setItem('userLocation', userData.location);
   if (userData.bio) localStorage.setItem('userBio', userData.bio);
+};
+
+// Type guard to check if a message has an image_url
+const hasImageUrl = (message: any): message is ChatMessage & { image_url: string } => {
+  return message && typeof message === 'object' && 'image_url' in message && typeof message.image_url === 'string';
 };
 
 export const generateChatCompletion = async (messages: ChatMessage[]): Promise<ChatMessage> => {
@@ -131,7 +136,7 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
     
     // Check if there are image attachments in the latest user message
     const lastUserMessage = [...messages].reverse().find(msg => msg.role === 'user');
-    const hasImage = lastUserMessage && 'image_url' in lastUserMessage && lastUserMessage.image_url;
+    const hasImage = hasImageUrl(lastUserMessage);
     
     // If there's an image, check image attachment limit
     if (hasImage && !checkUsageLimits('images')) {
@@ -154,10 +159,10 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
       ? messages 
       : [{ role: 'system', content: systemContent }, ...messages];
     
-    // Format messages for API
+    // Format messages for API with proper type checking
     const formattedMessages = messagesWithSystem.map(msg => {
-      // Use type guard to safely access image_url property
-      if ('image_url' in msg) {
+      // Use our type guard to safely access image_url property
+      if (hasImageUrl(msg)) {
         return {
           role: msg.role,
           content: msg.content,
@@ -172,6 +177,8 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
     
     // Select appropriate model based on content
     const model = getModelForContent(messages);
+    
+    console.log('Using model:', model, 'Has image:', hasImage);
     
     const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
@@ -189,6 +196,7 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
 
     if (!response.ok) {
       const errorData = await response.json();
+      console.error('Mistral API error:', errorData);
       throw new Error(errorData.error?.message || 'Failed to generate completion');
     }
 

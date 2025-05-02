@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import ChatHeader from '@/components/ChatHeader';
@@ -6,12 +5,14 @@ import ChatMessage from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
 import ChatSidebar from '@/components/ChatSidebar';
 import SettingsDialog from '@/components/SettingsDialog';
+import VoiceRecordingModal from '@/components/VoiceRecordingModal';
 import { ChatMessage as ChatMessageType } from '@/services/openRouterService';
 import { 
   generateChatCompletion, 
   generateChatTitle,
   simulateStreamingResponse
 } from '@/services/mistralService';
+import { speakText } from '@/services/voiceService';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   fetchUserChats, 
@@ -33,6 +34,7 @@ const Index = () => {
   const [isThinking, setIsThinking] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [language, setLanguage] = useState<'ru' | 'en'>('ru');
+  const [voiceRecordingOpen, setVoiceRecordingOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -144,6 +146,14 @@ const Index = () => {
     }
   };
 
+  // Add a handler for voice input
+  const handleVoiceInput = (transcript: string) => {
+    if (transcript) {
+      handleSendMessage(transcript);
+    }
+    setVoiceRecordingOpen(false);
+  };
+
   const handleStopGeneration = () => {
     stopGenerationRef.current = true;
     if (animationRef.current) {
@@ -151,6 +161,8 @@ const Index = () => {
     }
     setIsGenerating(false);
     setIsThinking(false);
+    // Stop any ongoing speech synthesis
+    window.speechSynthesis.cancel();
   };
 
   const handleSendMessage = async (content: string, imageUrl?: string) => {
@@ -200,6 +212,11 @@ const Index = () => {
         updatedMessages = [...updatedMessages, assistantMessage];
         setAnimateLastMessage(true); // Enable animation for the new message
         setMessages(updatedMessages);
+        
+        // Speak the assistant's response if it's not too long
+        if (assistantMessage.content.length < 1000) {
+          speakText(assistantMessage.content);
+        }
         
         // For new chats or chats with default title, generate AI title
         if (isNewChat) {
@@ -307,8 +324,15 @@ const Index = () => {
         <ChatInput 
           onSendMessage={handleSendMessage} 
           onStopGeneration={handleStopGeneration}
+          onVoiceRecording={() => setVoiceRecordingOpen(true)}
           isGenerating={isGenerating}
           disabled={isLoading && !isGenerating}  
+        />
+        
+        <VoiceRecordingModal 
+          isOpen={voiceRecordingOpen} 
+          onClose={() => setVoiceRecordingOpen(false)}
+          onRecordingComplete={handleVoiceInput} 
         />
       </div>
     </div>

@@ -115,28 +115,60 @@ export const blobToBase64 = (blob: Blob): Promise<string> => {
   });
 };
 
-// Функция для распознавания речи
-export const transcribeVoice = async (audioBlob: Blob): Promise<string> => {
-  try {
-    const base64Audio = await blobToBase64(audioBlob);
+// Use browser's SpeechSynthesis API to speak text
+export const speakText = (text: string): void => {
+  // Stop any ongoing speech
+  window.speechSynthesis.cancel();
+  
+  // Clean text from emojis and other special characters
+  const cleanText = text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+    .replace(/[^\p{L}\p{N}\p{P}\p{Z}]/gu, ''); // Keep only letters, numbers, punctuation and spaces
+  
+  if (!cleanText.trim()) return;
+  
+  const utterance = new SpeechSynthesisUtterance(cleanText);
+  
+  // Set language
+  const language = localStorage.getItem('language') || 'ru';
+  utterance.lang = language === 'ru' ? 'ru-RU' : 'en-US';
+  
+  // Get available voices for the selected language
+  const voices = window.speechSynthesis.getVoices();
+  const languageVoices = voices.filter(voice => voice.lang.startsWith(language));
+  
+  // Choose a voice
+  if (languageVoices.length > 0) {
+    utterance.voice = languageVoices[0];
+  }
+  
+  // Speak the text
+  window.speechSynthesis.speak(utterance);
+};
+
+// Use the browser's speech recognition API
+export const transcribeVoice = (language: string = 'ru'): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
-    // Отправляем аудио на сервер для распознавания
-    const response = await fetch('/api/transcribe', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ audio: base64Audio }),
-    });
-    
-    if (!response.ok) {
-      throw new Error('Ошибка при распознавании речи');
+    if (!SpeechRecognition) {
+      reject(new Error('Speech recognition not supported in this browser'));
+      return;
     }
     
-    const data = await response.json();
-    return data.text;
-  } catch (error) {
-    console.error('Ошибка распознавания речи:', error);
-    throw error;
-  }
+    const recognition = new SpeechRecognition();
+    recognition.lang = language === 'ru' ? 'ru-RU' : 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      resolve(transcript);
+    };
+    
+    recognition.onerror = (event) => {
+      reject(new Error(`Speech recognition error: ${event.error}`));
+    };
+    
+    recognition.start();
+  });
 };

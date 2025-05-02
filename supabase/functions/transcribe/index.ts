@@ -20,40 +20,14 @@ serve(async (req) => {
       throw new Error('No audio file provided')
     }
 
-    // Make API call to Mistral API for transcription
-    // Note: Using a placeholder for now, will need to be replaced with actual Mistral API call
-    // when they provide a transcription endpoint
-    
-    // For now, let's use a mock response
+    // Here we'll use the Web Speech API on the frontend, so we just need to 
+    // return a success response. The actual transcription happens in the browser.
     return new Response(
-      JSON.stringify({ text: "Текст вашего голосового сообщения будет отображаться здесь. Это временная заглушка для демонстрации функционала." }),
+      JSON.stringify({ success: true }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
     )
-
-    // In actual implementation, you would send the audio file to a transcription service:
-    /*
-    const formDataToSend = new FormData()
-    formDataToSend.append('file', audioFile)
-    formDataToSend.append('model', 'whisper-1')
-    
-    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`
-      },
-      body: formDataToSend
-    })
-    
-    const result = await response.json()
-    return new Response(
-      JSON.stringify({ text: result.text }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    )
-    */
   } catch (error) {
     console.error('Error in transcription:', error)
     return new Response(
