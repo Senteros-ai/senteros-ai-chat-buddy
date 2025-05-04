@@ -1,6 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, X } from 'lucide-react';
+import { generateChatCompletion } from '@/services/mistralService';
+import { useToast } from "@/hooks/use-toast";
+import { speakText } from '@/services/voiceService';
+import TypingIndicator from './TypingIndicator';
 
 interface VoiceRecordingModalProps {
   isOpen: boolean;
@@ -10,10 +14,12 @@ interface VoiceRecordingModalProps {
 
 const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({ 
   isOpen, 
-  onClose, 
-  onRecordingComplete 
+  onClose
 }) => {
   const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [userMessage, setUserMessage] = useState('');
+  const [aiResponse, setAiResponse] = useState('');
   const [amplitudes, setAmplitudes] = useState<number[]>(Array(60).fill(0));
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -21,12 +27,15 @@ const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({
   const analyserRef = useRef<AnalyserNode | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const { toast } = useToast();
   
   useEffect(() => {
     if (isOpen) {
       startRecording();
     } else {
       stopRecordingAndCleanup();
+      setUserMessage('');
+      setAiResponse('');
     }
     
     return () => {
@@ -68,10 +77,10 @@ const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({
             .map(result => result[0].transcript)
             .join('');
           
-          // If this is a final result, send it
+          // If this is a final result, process it
           if (event.results[0].isFinal) {
             if (transcript.trim()) {
-              onRecordingComplete(transcript.trim());
+              processVoiceInput(transcript.trim());
             }
             stopRecordingAndCleanup();
           }
@@ -83,7 +92,7 @@ const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({
         };
         
         recognition.onend = () => {
-          stopRecordingAndCleanup();
+          setIsRecording(false);
         };
         
         recognitionRef.current = recognition;
@@ -94,11 +103,46 @@ const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({
         visualizeAudio();
       } else {
         console.error('Speech recognition not supported in this browser');
+        toast({
+          title: "Ошибка",
+          description: "Распознавание речи не поддерживается в этом браузере",
+          variant: "destructive",
+        });
         onClose();
       }
     } catch (error) {
       console.error('Error accessing microphone:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось получить доступ к микрофону",
+        variant: "destructive",
+      });
       onClose();
+    }
+  };
+  
+  const processVoiceInput = async (transcript: string) => {
+    setUserMessage(transcript);
+    setIsProcessing(true);
+    
+    try {
+      const messages = [{ role: 'user', content: transcript }];
+      const response = await generateChatCompletion(messages);
+      
+      setAiResponse(response.content);
+      
+      // Speak the AI response
+      // Clean text for voice output
+      speakText(response.content);
+    } catch (error) {
+      console.error('Error generating AI response:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось получить ответ от ИИ",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
     }
   };
   
@@ -158,13 +202,24 @@ const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({
     analyserRef.current = null;
     setIsRecording(false);
   };
+
+  const handleCloseAndReset = () => {
+    // Stop any ongoing speech synthesis
+    window.speechSynthesis.cancel();
+    onClose();
+  };
   
+  // Get language for UI texts
+  const language = localStorage.getItem('language') || 'ru';
+  const isRussian = language === 'ru';
+
+  // Return null if not open
   if (!isOpen) return null;
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
-      <div className="relative w-full h-full flex flex-col items-center justify-center">
-        {/* Визуализация звука в виде круга с пульсацией */}
+      <div className="relative w-full h-full flex flex-col items-center justify-center p-6">
+        {/* Recording visualization */}
         <div className="relative mb-8">
           <div 
             className={`w-32 h-32 rounded-full bg-gradient-to-b from-blue-300 to-blue-500 flex items-center justify-center transition-all duration-200 ${
@@ -178,17 +233,54 @@ const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({
           </div>
         </div>
         
-        <div className="text-white text-xl mb-8">
-          {isRecording ? 'Говорите...' : 'Обработка...'}
+        {/* Status message */}
+        <div className="text-white text-xl mb-6">
+          {isRecording ? (isRussian ? 'Говорите...' : 'Speaking...') : 
+            (isProcessing ? (isRussian ? 'Обработка...' : 'Processing...') : 
+              (userMessage ? '' : (isRussian ? 'Нажмите на кнопку микрофона' : 'Press the microphone button')))}
         </div>
         
-        {/* Кнопка закрытия */}
-        <button 
-          onClick={onClose}
-          className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
-        >
-          <X className="w-8 h-8 text-white" />
-        </button>
+        {/* User message and AI response */}
+        <div className="w-full max-w-2xl max-h-[70vh] overflow-y-auto bg-background/10 backdrop-blur-sm rounded-lg p-6 mb-6">
+          {userMessage && (
+            <div className="mb-4">
+              <div className="font-semibold text-white mb-2">{isRussian ? 'Вы:' : 'You:'}</div>
+              <div className="text-white/90 bg-primary/20 p-3 rounded">{userMessage}</div>
+            </div>
+          )}
+          
+          {(isProcessing || aiResponse) && (
+            <div>
+              <div className="font-semibold text-white mb-2">{isRussian ? 'Ассистент:' : 'Assistant:'}</div>
+              {isProcessing ? (
+                <div className="bg-card/30 p-3 rounded">
+                  <TypingIndicator />
+                </div>
+              ) : (
+                <div className="text-white/90 bg-card/30 p-3 rounded whitespace-pre-wrap">{aiResponse}</div>
+              )}
+            </div>
+          )}
+        </div>
+        
+        {/* Controls */}
+        <div className="flex gap-4">
+          {!isRecording && !isProcessing && (
+            <button
+              onClick={startRecording}
+              className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center hover:bg-blue-600 transition-colors"
+            >
+              <Mic className="w-8 h-8 text-white" />
+            </button>
+          )}
+          
+          <button 
+            onClick={handleCloseAndReset}
+            className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+          >
+            <X className="w-8 h-8 text-white" />
+          </button>
+        </div>
       </div>
     </div>
   );

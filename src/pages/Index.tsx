@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import ChatHeader from '@/components/ChatHeader';
 import ChatMessage from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
@@ -42,7 +42,6 @@ const Index = () => {
   const stopGenerationRef = useRef<boolean>(false);
   const animationRef = useRef<(() => void) | null>(null);
 
-  // Apply theme from localStorage
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
     
@@ -50,7 +49,6 @@ const Index = () => {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       document.documentElement.classList.toggle('dark', systemTheme === 'dark');
       
-      // Listen for system theme changes
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handleChange = (e: MediaQueryListEvent) => {
         document.documentElement.classList.toggle('dark', e.matches);
@@ -63,20 +61,17 @@ const Index = () => {
     }
   }, []);
 
-  // Load language setting
   useEffect(() => {
     const savedLanguage = localStorage.getItem('language') as 'ru' | 'en' || 'ru';
     setLanguage(savedLanguage);
   }, []);
 
-  // Load user chats
   useEffect(() => {
     if (user) {
       loadUserChats();
     }
   }, [user]);
 
-  // Load chat messages when currentChatId changes
   useEffect(() => {
     if (currentChatId) {
       loadChatMessages(currentChatId);
@@ -85,7 +80,6 @@ const Index = () => {
     }
   }, [currentChatId]);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -95,7 +89,6 @@ const Index = () => {
       const userChats = await fetchUserChats();
       setChats(userChats);
       
-      // If there are chats and no current chat is selected, select the first one
       if (userChats.length > 0 && !currentChatId) {
         setCurrentChatId(userChats[0].id);
       }
@@ -115,7 +108,7 @@ const Index = () => {
     try {
       const chatMessages = await fetchChatMessages(chatId);
       setMessages(chatMessages);
-      setAnimateLastMessage(false); // Не анимируем при загрузке истории
+      setAnimateLastMessage(false);
     } catch (error) {
       console.error('Error loading chat messages:', error);
       toast({
@@ -134,25 +127,19 @@ const Index = () => {
 
   const generateAITitle = async (chatId: string, messages: ChatMessageType[]) => {
     try {
-      if (messages.length >= 2) { // Need at least one user message and one AI response
+      if (messages.length >= 2) {
         const title = await generateChatTitle(messages);
         if (title) {
           await updateChatTitle(chatId, title);
-          loadUserChats(); // Refresh the chat list to show the new title
+          loadUserChats();
         }
       }
     } catch (error) {
       console.error('Error generating chat title:', error);
-      // Silent fail - don't show toast for this
     }
   };
 
-  // Add a handler for voice input
-  const handleVoiceInput = (transcript: string) => {
-    if (transcript) {
-      setIsVoiceMode(true); // Set voice mode to true when voice input is used
-      handleSendMessage(transcript);
-    }
+  const handleVoiceInput = () => {
     setVoiceRecordingOpen(false);
   };
 
@@ -163,7 +150,6 @@ const Index = () => {
     }
     setIsGenerating(false);
     setIsThinking(false);
-    // Stop any ongoing speech synthesis
     window.speechSynthesis.cancel();
   };
 
@@ -178,15 +164,14 @@ const Index = () => {
     let updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setIsLoading(true);
-    setIsThinking(true); // Show thinking indicator
-    setIsGenerating(true); // Show stop button
+    setIsThinking(true);
+    setIsGenerating(true);
     stopGenerationRef.current = false;
 
     try {
       let chatId = currentChatId;
       let isNewChat = false;
       
-      // If no current chat, create a new one with a temporary title
       if (!chatId) {
         const tempTitle = content.substring(0, 30) + (content.length > 30 ? '...' : '');
         const newChat = await createChat(tempTitle, userMessage);
@@ -195,36 +180,29 @@ const Index = () => {
         setChats(prev => [newChat, ...prev]);
         isNewChat = true;
       } else {
-        // Save user message to existing chat
         await saveChatMessage(chatId, userMessage);
       }
 
-      // Get assistant response only if generation wasn't stopped
       if (!stopGenerationRef.current) {
         const assistantMessage = await generateChatCompletion(updatedMessages);
         
-        // Save assistant message
         if (chatId) {
           await saveChatMessage(chatId, assistantMessage);
         }
 
-        // Update messages and enable animation
         setIsThinking(false);
         updatedMessages = [...updatedMessages, assistantMessage];
-        setAnimateLastMessage(true); // Enable animation for the new message
+        setAnimateLastMessage(true);
         setMessages(updatedMessages);
         
-        // Speak the assistant's response if in voice mode and if it's not too long
         if (isVoiceMode && assistantMessage.content.length < 1000) {
           speakText(assistantMessage.content);
         }
         
-        // For new chats or chats with default title, generate AI title
         if (isNewChat) {
           generateAITitle(chatId, updatedMessages);
         }
         
-        // Reset voice mode for normal text input
         if (!voiceRecordingOpen) {
           setIsVoiceMode(false);
         }
@@ -286,6 +264,7 @@ const Index = () => {
         <ChatHeader 
           onNewChat={handleNewChat}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          onOpenVoiceRecord={() => setVoiceRecordingOpen(true)}
         />
         
         <div className="flex-1 overflow-y-auto p-4">

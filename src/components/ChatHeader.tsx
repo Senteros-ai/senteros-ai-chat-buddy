@@ -1,105 +1,68 @@
 
-import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Menu, Plus, Settings, User } from "lucide-react";
-import { Link } from "react-router-dom";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuth } from '@/contexts/AuthContext';
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Settings, Menu, Plus, Mic } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface ChatHeaderProps {
   onNewChat: () => void;
   onToggleSidebar: () => void;
+  onOpenVoiceRecord?: () => void;
 }
 
 const ChatHeader: React.FC<ChatHeaderProps> = ({ 
   onNewChat, 
-  onToggleSidebar
+  onToggleSidebar,
+  onOpenVoiceRecord 
 }) => {
-  const { user } = useAuth();
-  const [language] = useState(localStorage.getItem('language') || 'ru');
-  
-  // Локализованные тексты
-  const texts = {
-    settings: language === 'ru' ? 'Настройки' : 'Settings',
-    account: language === 'ru' ? 'Аккаунт' : 'Account',
-    signOut: language === 'ru' ? 'Выйти' : 'Sign out',
-    newChat: language === 'ru' ? 'Новый чат' : 'New Chat',
-  };
-  
-  // Получаем инициалы пользователя или имя из метаданных
-  const getUserInitials = () => {
-    if (!user) return "?";
-    
-    const username = user.user_metadata?.username;
-    if (username) return username.charAt(0).toUpperCase();
-    
-    return user.email?.charAt(0).toUpperCase() || "?";
-  };
+  const navigate = useNavigate();
+  const language = localStorage.getItem('language') || 'ru';
+  const isRussian = language === 'ru';
 
   return (
-    <header className="border-b dark:border-gray-700 py-2 px-4">
-      <div className="flex justify-between items-center max-w-screen-lg mx-auto">
-        <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="icon" onClick={onToggleSidebar}>
-            <Menu className="h-5 w-5" />
-          </Button>
-          <div className="flex items-center">
-            <img 
-              src="https://i.ibb.co/xKtY6RXz/Chat-GPT-Image-1-2025-17-16-51.png" 
-              alt="SenterosAI" 
-              className="h-8 w-8 mr-2 hidden sm:block"
-            />
-            <h1 className="text-xl font-semibold">SenterosAI</h1>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onNewChat}
-            className="flex items-center"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">{texts.newChat}</span>
-          </Button>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <Avatar className="h-8 w-8">
-                  {user?.user_metadata?.avatar_url ? (
-                    <AvatarImage src={user.user_metadata.avatar_url} alt={user.user_metadata?.username || "User"} />
-                  ) : (
-                    <AvatarFallback>
-                      {getUserInitials()}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{texts.account}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <Link to="/settings">
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>{texts.settings}</span>
-                </DropdownMenuItem>
-              </Link>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+    <div className="flex items-center justify-between p-4 border-b">
+      <div className="flex items-center">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="mr-2 md:hidden"
+          onClick={onToggleSidebar}
+          aria-label={isRussian ? "Открыть меню" : "Open menu"}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+        <h1 className="text-xl font-bold">SenterosAI</h1>
       </div>
-    </header>
+
+      <div className="flex items-center space-x-2">
+        {onOpenVoiceRecord && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onOpenVoiceRecord}
+            aria-label={isRussian ? "Голосовой ввод" : "Voice input"}
+          >
+            <Mic className="h-5 w-5" />
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onNewChat}
+          aria-label={isRussian ? "Новый чат" : "New chat"}
+        >
+          <Plus className="h-5 w-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/settings')}
+          aria-label={isRussian ? "Настройки" : "Settings"}
+        >
+          <Settings className="h-5 w-5" />
+        </Button>
+      </div>
+    </div>
   );
 };
 

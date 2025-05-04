@@ -2,7 +2,7 @@
 import React, { useState, useRef, KeyboardEvent, ChangeEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, StopCircle, Mic } from "lucide-react";
+import { Send, StopCircle } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,7 +17,6 @@ interface ChatInputProps {
 const ChatInput: React.FC<ChatInputProps> = ({ 
   onSendMessage, 
   onStopGeneration, 
-  onVoiceRecording,
   isGenerating, 
   disabled = false 
 }) => {
@@ -49,22 +48,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
     <div className="border-t bg-card p-4">
       <form onSubmit={handleSubmit} className="mx-auto max-w-4xl">
         <div className="flex gap-2">
-          {!isGenerating && (
-            <Button
-              type="button"
-              size="icon"
-              className="shrink-0" 
-              variant="ghost"
-              onClick={onVoiceRecording}
-              disabled={disabled}
-            >
-              <Mic className="h-5 w-5" />
-              <span className="sr-only">
-                {isRussian ? "Голосовой ввод" : "Voice input"}
-              </span>
-            </Button>
-          )}
-          
           <Input
             ref={inputRef}
             value={message}
