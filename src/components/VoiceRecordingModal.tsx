@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, X } from 'lucide-react';
 import { generateChatCompletion, ChatMessage } from '@/services/mistralService';

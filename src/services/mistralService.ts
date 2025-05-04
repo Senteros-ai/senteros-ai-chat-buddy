@@ -1,5 +1,9 @@
+
 import { ChatMessage } from './openRouterService';
 import { conversationExamples } from './aiTrainingExamples';
+
+// Re-export the ChatMessage type
+export type { ChatMessage };
 
 // API key for SenterosAI
 const API_KEY = 'eRmavVbJ4STOrZalhzf7WigVhOjoxJmv';
