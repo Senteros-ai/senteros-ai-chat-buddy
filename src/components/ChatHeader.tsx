@@ -34,6 +34,26 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
           <Menu className="h-5 w-5" />
         </Button>
         <h1 className="text-xl font-bold">SenterosAI</h1>
+        
+        {/* New chat and history buttons moved here */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onNewChat}
+          className="ml-2"
+          aria-label={isRussian ? "Новый чат" : "New chat"}
+        >
+          <Plus className="h-5 w-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onToggleSidebar}
+          className="ml-1"
+          aria-label={isRussian ? "История чатов" : "Chat history"}
+        >
+          <History className="h-5 w-5" />
+        </Button>
       </div>
 
       <div className="flex items-center space-x-2">
@@ -47,23 +67,6 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             <Mic className="h-5 w-5" />
           </Button>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onNewChat}
-          aria-label={isRussian ? "Новый чат" : "New chat"}
-        >
-          <Plus className="h-5 w-5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggleSidebar}
-          className="hidden md:flex"
-          aria-label={isRussian ? "История чатов" : "Chat history"}
-        >
-          <History className="h-5 w-5" />
-        </Button>
         <Button
           variant="ghost"
           size="icon"
