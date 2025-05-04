@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import ChatHeader from '@/components/ChatHeader';
@@ -168,13 +167,12 @@ const Index = () => {
     window.speechSynthesis.cancel();
   };
 
-  const handleSendMessage = async (content: string, imageUrl?: string) => {
-    if (!content.trim() && !imageUrl) return;
+  const handleSendMessage = async (content: string) => {
+    if (!content.trim()) return;
 
     const userMessage: ChatMessageType = {
       role: 'user',
       content,
-      ...(imageUrl && { image_url: imageUrl })
     };
 
     let updatedMessages = [...messages, userMessage];
