@@ -60,6 +60,18 @@ const initializeBrowserLanguage = () => {
   }
 };
 
+// Register service worker for PWA
+const registerServiceWorker = async () => {
+  if ('serviceWorker' in navigator) {
+    try {
+      await navigator.serviceWorker.register('/service-worker.js');
+      console.log('Service worker registered');
+    } catch (error) {
+      console.error('Error registering service worker:', error);
+    }
+  }
+};
+
 // Sync user profile data from Supabase to localStorage
 const syncUserProfile = async () => {
   try {
@@ -77,6 +89,7 @@ const AppWithTheme = () => {
     initializeBrowserLanguage();
     applyStoredTheme();
     syncUserProfile();
+    registerServiceWorker();
     const cleanup = setupThemeListener();
     
     // Update document title for SEO

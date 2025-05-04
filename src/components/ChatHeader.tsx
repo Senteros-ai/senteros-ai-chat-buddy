@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Settings, Menu, Plus, Mic } from 'lucide-react';
+import { Settings, Menu, Plus, Mic, History, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ChatHeaderProps {
   onNewChat: () => void;
@@ -18,6 +19,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
   const navigate = useNavigate();
   const language = localStorage.getItem('language') || 'ru';
   const isRussian = language === 'ru';
+  const isMobile = useIsMobile();
 
   return (
     <div className="flex items-center justify-between p-4 border-b">
@@ -52,6 +54,15 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
           aria-label={isRussian ? "Новый чат" : "New chat"}
         >
           <Plus className="h-5 w-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onToggleSidebar}
+          className="hidden md:flex"
+          aria-label={isRussian ? "История чатов" : "Chat history"}
+        >
+          <History className="h-5 w-5" />
         </Button>
         <Button
           variant="ghost"

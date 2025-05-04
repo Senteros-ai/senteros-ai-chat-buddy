@@ -1,0 +1,44 @@
+
+{
+  "name": "SenterosAI",
+  "short_name": "SenterosAI",
+  "description": "Умный помощник на базе Mistral",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#8b5cf6",
+  "icons": [
+    {
+      "src": "icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Новый чат",
+      "short_name": "Новый",
+      "description": "Создать новый чат",
+      "url": "/?new=true"
+    },
+    {
+      "name": "Настройки",
+      "short_name": "Настройки",
+      "description": "Открыть настройки",
+      "url": "/settings"
+    }
+  ]
+}
