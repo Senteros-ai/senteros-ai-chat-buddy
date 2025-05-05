@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -11,21 +11,13 @@ import { useToast } from '@/components/ui/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAppLanguage } from '@/hooks/useAppLanguage';
 import { LanguageCode } from '@/hooks/useAppLanguage';
-import { 
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot
-} from "@/components/ui/input-otp";
 
 const Auth = () => {
-  const { user, signIn, signUp, verifyOTP, loading } = useAuth();
+  const { user, signIn, signUp, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showOTPVerification, setShowOTPVerification] = useState(false);
-  const [otpValue, setOtpValue] = useState('');
-  const [registerEmail, setRegisterEmail] = useState('');
   const { toast } = useToast();
   const { language, languages, setLanguage, texts } = useAppLanguage();
 
@@ -68,11 +60,7 @@ const Auth = () => {
 
     try {
       setIsLoading(true);
-      const { success } = await signUp(email, password, username);
-      if (success) {
-        setRegisterEmail(email);
-        setShowOTPVerification(true);
-      }
+      await signUp(email, password, username);
     } catch (error) {
       // Error is handled in the signUp function
     } finally {
@@ -80,93 +68,10 @@ const Auth = () => {
     }
   };
 
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otpValue || otpValue.length < 6) {
-      toast({
-        title: "Ошибка",
-        description: "Пожалуйста, введите полный код подтверждения",
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      await verifyOTP(registerEmail, otpValue);
-    } catch (error) {
-      // Error is handled in the verifyOTP function
-    } finally {
-      setIsLoading(false);
-      setShowOTPVerification(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (showOTPVerification) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <img
-                src="https://i.ibb.co/6JWhNYQF/photo-2025-04-21-16-32-07-removebg-preview.png"
-                alt="SenterosAI"
-                className="w-16 h-16"
-              />
-            </div>
-            <CardTitle className="text-2xl">Подтверждение Email</CardTitle>
-            <CardDescription>
-              Введите код, который мы отправили на {registerEmail}
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleVerifyOTP}>
-            <CardContent className="space-y-4 pt-4">
-              <div className="flex flex-col items-center justify-center space-y-4">
-                <InputOTP
-                  maxLength={6}
-                  value={otpValue}
-                  onChange={(value) => setOtpValue(value)}
-                >
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                  </InputOTPGroup>
-                </InputOTP>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <div className="flex flex-col w-full gap-2">
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  ) : (
-                    "Подтвердить"
-                  )}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => setShowOTPVerification(false)}
-                >
-                  Вернуться
-                </Button>
-              </div>
-            </CardFooter>
-          </form>
-        </Card>
       </div>
     );
   }

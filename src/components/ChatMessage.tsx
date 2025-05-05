@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ReactMarkdown from 'react-markdown';
-import { simulateStreamingResponse } from '@/services/mistralService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -38,7 +37,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const isUser = message.role === 'user';
   const [displayedContent, setDisplayedContent] = useState<string>(isUser ? message.content : '');
   const [isAnimating, setIsAnimating] = useState(false);
-  const animationRef = useRef<(() => void) | null>(null);
   const { user } = useAuth();
   const isDarkMode = document.documentElement.classList.contains('dark');
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
@@ -53,24 +51,22 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     setFullscreenImage(null);
   };
 
-  // Запускаем анимацию только для последнего сообщения от ассистента
+  // Use a simple fade-in animation for assistant messages
   useEffect(() => {
     if (!isUser && isLast && animateLastMessage) {
       setIsAnimating(true);
       setDisplayedContent('');
-      animationRef.current = simulateStreamingResponse(message.content, chunk => {
-        setDisplayedContent(prev => prev + chunk);
-      }, () => {
-        setIsAnimating(false);
-      });
+      
+      // Set the full content immediately but rely on CSS for the animation
+      setTimeout(() => {
+        setDisplayedContent(message.content);
+        setTimeout(() => {
+          setIsAnimating(false);
+        }, 1000); // Animation duration
+      }, 10);
     } else if (!isUser && !animateLastMessage) {
       setDisplayedContent(message.content);
     }
-    return () => {
-      if (animationRef.current) {
-        animationRef.current();
-      }
-    };
   }, [message.content, isUser, isLast, animateLastMessage]);
 
   return (
@@ -113,7 +109,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                   )}
                 </div>
               ) : (
-                <div className="relative prose dark:prose-invert prose-headings:my-4 prose-p:my-2 max-w-none">
+                <div className={cn(
+                  "relative prose dark:prose-invert prose-headings:my-4 prose-p:my-2 max-w-none",
+                  isAnimating && "animate-fade-in opacity-0"
+                )}>
                   {isThinking ? (
                     <TypingIndicator />
                   ) : (
@@ -155,7 +154,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                       {displayedContent}
                     </ReactMarkdown>
                   )}
-                  {isAnimating && <span className="animate-pulse inline-block ml-0.5">▌</span>}
                 </div>
               )}
             </div>

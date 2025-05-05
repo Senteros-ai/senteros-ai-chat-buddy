@@ -9,7 +9,6 @@ type AuthContextType = {
   user: User | null;
   signUp: (email: string, password: string, username: string) => Promise<{ success: boolean, error?: any }>;
   signIn: (email: string, password: string) => Promise<void>;
-  verifyOTP: (email: string, token: string) => Promise<void>;
   signOut: () => Promise<void>;
   loading: boolean;
 };
@@ -58,8 +57,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       
       toast({
-        title: "Код подтверждения отправлен",
-        description: "Пожалуйста, проверьте вашу почту и введите код подтверждения",
+        title: "Письмо отправлено",
+        description: "Пожалуйста, проверьте вашу почту и подтвердите регистрацию",
       });
       
       return { success: true };
@@ -70,30 +69,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         variant: "destructive",
       });
       return { success: false, error };
-    }
-  };
-
-  const verifyOTP = async (email: string, token: string) => {
-    try {
-      const { error } = await supabase.auth.verifyOtp({
-        email,
-        token,
-        type: 'email',
-      });
-
-      if (error) throw error;
-      
-      toast({
-        title: "Аккаунт подтвержден",
-        description: "Вы успешно подтвердили свой аккаунт",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Ошибка подтверждения",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
     }
   };
 
@@ -138,7 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, signUp, signIn, verifyOTP, signOut, loading }}>
+    <AuthContext.Provider value={{ session, user, signUp, signIn, signOut, loading }}>
       {children}
     </AuthContext.Provider>
   );
