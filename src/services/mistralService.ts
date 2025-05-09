@@ -1,4 +1,3 @@
-
 import { ChatMessage } from './openRouterService';
 import { conversationExamples } from './aiTrainingExamples';
 
@@ -98,16 +97,8 @@ const checkUsageLimits = (type: 'requests' | 'images'): boolean => {
 
 // Get model based on content (use Pixtral Large for images)
 const getModelForContent = (messages: ChatMessage[]): string => {
-  // Check if there are image attachments in the latest user message
-  const lastUserMessage = [...messages].reverse().find(msg => msg.role === 'user');
-  
-  // Use type guard to safely check for image_url
-  const hasImage = lastUserMessage && 
-    'image_url' in lastUserMessage && 
-    lastUserMessage.image_url !== undefined;
-  
-  // Use Pixtral Large for image processing
-  return hasImage ? 'pixtral-large-latest' : 'mistral-small-latest';
+  // For all messages, we'll now use mistral-medium-3 which supports images
+  return 'mistral-medium-3';
 };
 
 // Store user profile data from Supabase in localStorage for AI context
@@ -172,7 +163,7 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
       };
     });
     
-    // Select appropriate model based on content
+    // Use mistral-medium-3 model for all requests
     const model = getModelForContent(messages);
     
     console.log('Using model:', model, 'Has image:', hasImage);

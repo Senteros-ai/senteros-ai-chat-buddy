@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import ChatHeader from '@/components/ChatHeader';
@@ -22,6 +23,7 @@ import {
   Chat,
   updateChatTitle
 } from '@/services/chatService';
+import { v4 as uuidv4 } from 'uuid';
 
 const Index = () => {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
@@ -153,12 +155,40 @@ const Index = () => {
     window.speechSynthesis.cancel();
   };
 
-  const handleSendMessage = async (content: string) => {
-    if (!content.trim()) return;
+  const convertImageToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+    });
+  };
+
+  const handleSendMessage = async (content: string, imageFile?: File) => {
+    if (!content.trim() && !imageFile) return;
+
+    let image_url: string | undefined;
+    
+    if (imageFile) {
+      try {
+        image_url = await convertImageToBase64(imageFile);
+      } catch (error) {
+        console.error('Error converting image to base64:', error);
+        toast({
+          title: language === 'ru' ? 'Ошибка' : 'Error',
+          description: language === 'ru' 
+            ? 'Не удалось загрузить изображение' 
+            : 'Failed to upload image',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
 
     const userMessage: ChatMessageType = {
       role: 'user',
       content,
+      ...(image_url && { image_url })
     };
 
     let updatedMessages = [...messages, userMessage];
