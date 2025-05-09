@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, X, Volume2, Play, Square } from 'lucide-react';
-import { generateChatCompletion, ChatMessage } from '@/services/mistralService';
-import { useToast } from "@/hooks/use-toast";
-import { speakText } from '@/services/voiceService';
-import TypingIndicator from './TypingIndicator';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Mic, MicOff, StopCircle, Send, X } from 'lucide-react';
+import { AudioRecorder } from '@/services/voiceService';
+import { transcribeVoice } from '@/services/voiceService';
 
 interface VoiceRecordingModalProps {
   isOpen: boolean;
@@ -12,402 +12,258 @@ interface VoiceRecordingModalProps {
   onRecordingComplete: (text: string) => void;
 }
 
-const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({ 
-  isOpen, 
-  onClose
+const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({
+  isOpen,
+  onClose,
+  onRecordingComplete
 }) => {
   const [isRecording, setIsRecording] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [userMessage, setUserMessage] = useState('');
-  const [aiResponse, setAiResponse] = useState('');
-  const [amplitudes, setAmplitudes] = useState<number[]>(Array(60).fill(0));
-  const [isAiSpeaking, setIsAiSpeaking] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [transcribedText, setTranscribedText] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [visualizerValues, setVisualizerValues] = useState<number[]>(Array(20).fill(5));
+  const audioRecorderRef = useRef<AudioRecorder | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const { toast } = useToast();
-  
+
+  // Clean up on unmount
   useEffect(() => {
-    if (isOpen) {
-      startRecording();
-    } else {
-      stopRecordingAndCleanup();
-      setUserMessage('');
-      setAiResponse('');
-    }
-    
     return () => {
-      stopRecordingAndCleanup();
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      if (audioRecorderRef.current) {
+        audioRecorderRef.current.cleanup();
+      }
     };
+  }, []);
+
+  // Reset state when modal opens/closes
+  useEffect(() => {
+    if (!isOpen) {
+      setIsRecording(false);
+      setIsTranscribing(false);
+      setTranscribedText('');
+      setErrorMessage('');
+      if (audioRecorderRef.current) {
+        audioRecorderRef.current.cleanup();
+      }
+    }
   }, [isOpen]);
-  
+
   const startRecording = async () => {
     try {
-      // Request microphone access for visualization
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
+      setErrorMessage('');
       
-      // Set up audio visualization
-      const audioContext = new AudioContext();
-      audioContextRef.current = audioContext;
+      const audioRecorder = new AudioRecorder(handleAudioData);
+      audioRecorderRef.current = audioRecorder;
       
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      analyserRef.current = analyser;
+      const success = await audioRecorder.start();
       
-      const source = audioContext.createMediaStreamSource(stream);
-      source.connect(analyser);
-      sourceRef.current = source;
-      
-      // Set up speech recognition
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = true;
-        recognition.lang = localStorage.getItem('language') === 'en' ? 'en-US' : 'ru-RU';
-        
-        recognition.onresult = (event) => {
-          const transcript = Array.from(event.results)
-            .map(result => result[0].transcript)
-            .join('');
-          
-          // If this is a final result, process it
-          if (event.results[0].isFinal) {
-            if (transcript.trim()) {
-              processVoiceInput(transcript.trim());
-            }
-            stopRecordingAndCleanup();
-          }
-        };
-        
-        recognition.onerror = (event) => {
-          console.error('Speech recognition error', event.error);
-          stopRecordingAndCleanup();
-        };
-        
-        recognition.onend = () => {
-          setIsRecording(false);
-        };
-        
-        recognitionRef.current = recognition;
-        recognition.start();
+      if (success) {
         setIsRecording(true);
-        
-        // Start visualizing audio
-        visualizeAudio();
       } else {
-        console.error('Speech recognition not supported in this browser');
-        toast({
-          title: "Ошибка",
-          description: "Распознавание речи не поддерживается в этом браузере",
-          variant: "destructive",
-        });
-        onClose();
+        setErrorMessage('Не удалось получить доступ к микрофону');
       }
     } catch (error) {
-      console.error('Error accessing microphone:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось получить доступ к микрофону",
-        variant: "destructive",
-      });
+      console.error('Error starting recording:', error);
+      setErrorMessage('Ошибка при запуске записи');
+    }
+  };
+
+  const stopRecording = async () => {
+    try {
+      if (!audioRecorderRef.current) return;
+      
+      setIsRecording(false);
+      setIsTranscribing(true);
+      
+      // Get recording blob
+      const audioBlob = await audioRecorderRef.current.stop();
+      
+      if (!audioBlob) {
+        setIsTranscribing(false);
+        setErrorMessage('Не удалось записать аудио');
+        return;
+      }
+
+      // Use browser's speech recognition API 
+      try {
+        const language = localStorage.getItem('language') || 'ru';
+        const text = await transcribeVoice(language);
+        handleTranscriptionComplete(text);
+      } catch (error) {
+        console.error('Speech recognition error:', error);
+        setErrorMessage('Не удалось распознать речь');
+        setIsTranscribing(false);
+      }
+    } catch (error) {
+      console.error('Error stopping recording:', error);
+      setErrorMessage('Ошибка при остановке записи');
+      setIsTranscribing(false);
+    }
+  };
+
+  const handleTranscriptionComplete = (text: string) => {
+    setTranscribedText(text);
+    setIsTranscribing(false);
+  };
+
+  const handleSubmit = () => {
+    if (transcribedText.trim()) {
+      onRecordingComplete(transcribedText);
       onClose();
     }
   };
-  
-  const processVoiceInput = async (transcript: string) => {
-    setUserMessage(transcript);
-    setIsProcessing(true);
+
+  // Audio visualization
+  const handleAudioData = (audioData: Float32Array) => {
+    // Create an animated visualization
+    const values = [];
+    const step = Math.floor(audioData.length / 20);
     
-    try {
-      const messages: ChatMessage[] = [{ 
-        role: 'user' as const, 
-        content: transcript 
-      }];
+    for (let i = 0; i < 20; i++) {
+      const startIdx = i * step;
+      const endIdx = startIdx + step;
+      let sum = 0;
       
-      const response = await generateChatCompletion(messages);
+      for (let j = startIdx; j < endIdx; j++) {
+        sum += Math.abs(audioData[j]);
+      }
       
-      setAiResponse(response.content);
-      
-      // Clean text for voice output
-      const cleanText = response.content
-        .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
-        .replace(/[-–—.0-9]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-        
-      // Speak the AI response
-      setIsAiSpeaking(true);
-      
-      // Add event listener to track when speech has ended
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.onend = () => {
-        setIsAiSpeaking(false);
+      const average = sum / step;
+      // Scale the value for better visualization (min 3px, max 40px)
+      const scaledValue = Math.max(3, Math.min(40, Math.floor(average * 100)));
+      values.push(scaledValue);
+    }
+    
+    setVisualizerValues(values);
+  };
+
+  // Generate a dynamic wave when not recording
+  useEffect(() => {
+    if (!isRecording && !isTranscribing && isOpen) {
+      const generateIdleWave = () => {
+        const values = Array(20).fill(0).map(() => {
+          return Math.floor(Math.random() * 15) + 3; // Random height between 3-18px
+        });
+        setVisualizerValues(values);
+        animationFrameRef.current = requestAnimationFrame(() => {
+          setTimeout(generateIdleWave, 200); // Update every 200ms
+        });
       };
       
-      // Speak text also handles adding the utterance to the speechSynthesis queue
-      speakText(cleanText);
-    } catch (error) {
-      console.error('Error generating AI response:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось получить ответ от ИИ",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
+      generateIdleWave();
+      
+      return () => {
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+      };
     }
-  };
-  
-  const visualizeAudio = () => {
-    if (!analyserRef.current || !isRecording) return;
-    
-    const analyser = analyserRef.current;
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-    analyser.getByteFrequencyData(dataArray);
-    
-    // Calculate average amplitude
-    const average = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length;
-    const normalizedAmplitude = average / 255; // Normalize to 0-1 range
-    
-    setAmplitudes(prev => {
-      const newAmplitudes = [...prev];
-      newAmplitudes.shift();
-      newAmplitudes.push(normalizedAmplitude);
-      return newAmplitudes;
-    });
-    
-    animationFrameRef.current = requestAnimationFrame(visualizeAudio);
-  };
-  
-  const stopRecordingAndCleanup = () => {
-    // Stop speech recognition
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch (e) {
-        // Ignore errors when stopping recognition
-      }
-      recognitionRef.current = null;
-    }
-    
-    // Stop microphone and clean up audio context
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    
-    if (sourceRef.current) {
-      sourceRef.current.disconnect();
-      sourceRef.current = null;
-    }
-    
-    if (audioContextRef.current) {
-      audioContextRef.current.close().catch(console.error);
-      audioContextRef.current = null;
-    }
-    
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-    
-    analyserRef.current = null;
-    setIsRecording(false);
-  };
+  }, [isRecording, isTranscribing, isOpen]);
 
-  const handleCloseAndReset = () => {
-    // Stop any ongoing speech synthesis
-    window.speechSynthesis.cancel();
-    setIsAiSpeaking(false);
-    onClose();
-  };
-  
-  const handleToggleSpeech = () => {
-    if (isAiSpeaking) {
-      window.speechSynthesis.cancel();
-      setIsAiSpeaking(false);
-    } else if (aiResponse) {
-      setIsAiSpeaking(true);
-      speakText(aiResponse);
-    }
-  };
-  
-  // Get language for UI texts
-  const language = localStorage.getItem('language') || 'ru';
-  const isRussian = language === 'ru';
-
-  // Return null if not open
-  if (!isOpen) return null;
-  
   return (
-    <div className="fixed inset-0 bg-gradient-to-b from-black to-gray-900 flex items-center justify-center z-50 animate-fade-in">
-      <div className="relative w-full h-full flex flex-col items-center justify-center p-6">
-        {/* Recording visualization */}
-        <div className="relative mb-8">
-          {isRecording ? (
-            <div className="recording-animation">
-              <div 
-                className="w-36 h-36 rounded-full bg-gradient-to-b from-blue-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/50 animate-pulse"
-                style={{
-                  transform: `scale(${1 + Math.max(...amplitudes.slice(-5)) * 0.5})`
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden border-none rounded-xl voice-modal-container">
+        <div className="voice-modal-content p-6 rounded-xl flex flex-col items-center space-y-6">
+          <div className="flex justify-between w-full">
+            <h2 className="text-xl font-semibold text-white">Голосовой ввод</h2>
+            <Button
+              variant="ghost"
+              className="p-0 h-auto text-white/70 hover:text-white hover:bg-transparent"
+              onClick={onClose}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Voice visualizer */}
+          <div className="voice-visualizer my-4 h-16">
+            {visualizerValues.map((value, index) => (
+              <div
+                key={index}
+                className={`voice-visualizer-bar ${isRecording ? 'animate-wave' : 'animate-sound-wave'}`}
+                style={{ 
+                  height: `${value}px`,
+                  animationDelay: `${index * 0.05}s`,
+                  backgroundColor: isRecording 
+                    ? 'rgba(239, 68, 68, 0.7)' 
+                    : 'rgba(59, 130, 246, 0.7)'
                 }}
-              >
-                <div className="absolute inset-0 rounded-full bg-gradient-to-t from-blue-500/20 to-blue-300/20 animate-spin-slow"></div>
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center z-10">
-                  <Mic className="w-10 h-10 text-white" />
+              />
+            ))}
+          </div>
+
+          {/* Different states */}
+          <div className="flex flex-col items-center space-y-4 w-full">
+            {isTranscribing ? (
+              <div className="recording-animation animate-fade-in-up flex flex-col items-center space-y-3">
+                <div className="relative">
+                  <div className="voice-record-ring w-16 h-16 rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+                  <div className="p-4 rounded-full bg-blue-500/20 animate-pulse flex items-center justify-center">
+                    <div className="text-blue-500 animate-spin-slow">
+                      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  </div>
                 </div>
+                <p className="text-white/80">Распознавание...</p>
               </div>
-              
-              {/* Sound wave visualization */}
-              <div className="voice-visualizer mt-4 flex items-center justify-center space-x-1">
-                {amplitudes.slice(-30).map((amp, i) => (
-                  <div
-                    key={i}
-                    className="voice-visualizer-bar bg-blue-400"
-                    style={{
-                      height: `${Math.max(3, amp * 60)}px`,
-                      width: '3px',
-                      opacity: i > 15 ? (i - 15) / 15 : (15 - i) / 15,
-                      transition: 'height 0.1s ease'
-                    }}
-                  />
-                ))}
+            ) : isRecording ? (
+              <div className="recording-animation animate-fade-in-up flex flex-col items-center space-y-3">
+                <button
+                  onClick={stopRecording}
+                  className="voice-record-button recording p-4 rounded-full flex items-center justify-center"
+                >
+                  <StopCircle className="h-8 w-8 text-white" />
+                </button>
+                <p className="text-white/80">Запись...</p>
               </div>
-            </div>
-          ) : isAiSpeaking ? (
-            <div className="speaking-animation text-center">
-              <div className="w-36 h-36 rounded-full bg-gradient-to-b from-purple-400 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/50 animate-pulse">
-                <div className="absolute inset-0 rounded-full bg-gradient-to-t from-purple-500/20 to-purple-300/20 animate-spin-slow"></div>
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center z-10">
-                  <Volume2 className="w-10 h-10 text-white" />
-                </div>
-              </div>
-              
-              {/* Sound wave for AI speaking */}
-              <div className="voice-visualizer mt-4 flex items-center justify-center space-x-1">
-                {Array(15).fill(0).map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-purple-400 animate-sound-wave"
-                    style={{
-                      height: '30px',
-                      width: '3px',
-                      animationDelay: `${i * 0.1}s`
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="idle-state">
-              <div className="w-36 h-36 rounded-full bg-gradient-to-b from-gray-500 to-gray-700 flex items-center justify-center shadow-lg">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">
-                  <Mic className="w-10 h-10 text-gray-300" />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-        
-        {/* Status message */}
-        <div className="text-white text-xl mb-6 font-medium">
-          {isRecording ? (
-            <span className="animate-pulse">{isRussian ? 'Говорите...' : 'Speaking...'}</span>
-          ) : (
-            isProcessing ? (
-              <span>{isRussian ? 'Обработка...' : 'Processing...'}</span>
             ) : (
-              isAiSpeaking ? (
-                <span className="animate-pulse">{isRussian ? 'Воспроизведение...' : 'Playing...'}</span>
-              ) : (
-                userMessage ? (
-                  <span>{isRussian ? 'Нажмите на микрофон, чтобы продолжить' : 'Tap the microphone to continue'}</span>
-                ) : (
-                  <span>{isRussian ? 'Нажмите на кнопку микрофона' : 'Press the microphone button'}</span>
-                )
-              )
-            )
-          )}
-        </div>
-        
-        {/* User message and AI response */}
-        <div className="w-full max-w-2xl max-h-[60vh] overflow-y-auto bg-background/10 backdrop-blur-sm rounded-xl p-6 mb-6 border border-white/10 shadow-xl transition-all duration-300 ease-in-out">
-          {userMessage && (
-            <div className="mb-6 animate-fade-in">
-              <div className="font-semibold text-white mb-2 flex items-center">
-                <div className="w-8 h-8 rounded-full bg-blue-500 mr-2 flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">{isRussian ? 'Вы' : 'You'}</span>
-                </div>
-                <span>{isRussian ? 'Вы:' : 'You:'}</span>
+              <div className="idle-state animate-fade-in-up flex flex-col items-center space-y-3">
+                <button
+                  onClick={startRecording}
+                  className="voice-record-button p-4 rounded-full flex items-center justify-center"
+                >
+                  <Mic className="h-8 w-8 text-white" />
+                </button>
+                <p className="text-white/80">Нажмите для записи</p>
               </div>
-              <div className="text-white/90 bg-primary/20 p-4 rounded-xl shadow-inner">{userMessage}</div>
-            </div>
-          )}
-          
-          {(isProcessing || aiResponse) && (
-            <div className="animate-fade-in">
-              <div className="font-semibold text-white mb-2 flex items-center">
-                <div className="w-8 h-8 rounded-full bg-purple-500 mr-2 flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">AI</span>
+            )}
+
+            {/* Transcribed text display */}
+            {transcribedText && (
+              <div className="w-full bg-white/10 p-3 rounded-lg animate-fade-in-up mt-4">
+                <p className="text-white/90">{transcribedText}</p>
+                <div className="flex justify-end mt-2">
+                  <Button
+                    onClick={handleSubmit}
+                    className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+                  >
+                    <Send className="h-4 w-4" />
+                    Отправить
+                  </Button>
                 </div>
-                <span>{isRussian ? 'Ассистент:' : 'Assistant:'}</span>
               </div>
-              {isProcessing ? (
-                <div className="bg-card/30 p-4 rounded-xl shadow-inner">
-                  <TypingIndicator />
-                </div>
-              ) : (
-                <div className="text-white/90 bg-card/30 p-4 rounded-xl shadow-inner whitespace-pre-wrap">{aiResponse}</div>
-              )}
-            </div>
-          )}
+            )}
+
+            {/* Error message */}
+            {errorMessage && (
+              <div className="bg-red-500/20 p-3 rounded-lg w-full animate-fade-in-up">
+                <p className="text-red-300 text-sm">{errorMessage}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Microphone permissions info */}
+          <p className="text-white/50 text-xs text-center max-w-xs">
+            Для использования голосового ввода необходимо предоставить доступ к микрофону
+          </p>
         </div>
-        
-        {/* Controls */}
-        <div className="flex gap-6">
-          {!isRecording && !isProcessing && (
-            <button
-              onClick={startRecording}
-              className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105"
-            >
-              <Mic className="w-8 h-8 text-white" />
-            </button>
-          )}
-          
-          {aiResponse && !isProcessing && (
-            <button
-              onClick={handleToggleSpeech}
-              className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-105 ${
-                isAiSpeaking 
-                  ? "bg-gradient-to-r from-red-500 to-red-600 shadow-red-500/30 hover:shadow-red-500/50" 
-                  : "bg-gradient-to-r from-purple-500 to-purple-600 shadow-purple-500/30 hover:shadow-purple-500/50"
-              }`}
-            >
-              {isAiSpeaking ? (
-                <Square className="w-7 h-7 text-white" />
-              ) : (
-                <Play className="w-7 h-7 text-white ml-1" />
-              )}
-            </button>
-          )}
-          
-          <button 
-            onClick={handleCloseAndReset}
-            className="w-16 h-16 rounded-full bg-gradient-to-r from-gray-600 to-gray-700 flex items-center justify-center hover:from-gray-700 hover:to-gray-800 transition-all duration-300 shadow-lg hover:scale-105"
-          >
-            <X className="w-8 h-8 text-white" />
-          </button>
-        </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

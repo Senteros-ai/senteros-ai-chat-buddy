@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -296,9 +297,9 @@ body {
 
 /* Voice UI Animations */
 @keyframes pulse-audio {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+  0% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.7; }
 }
 
 @keyframes spin-slow {
@@ -311,7 +312,21 @@ body {
   50% { height: 30px; }
 }
 
-@keyframes fade-in {
+@keyframes wave {
+  0% { height: 5px; }
+  20% { height: 20px; }
+  40% { height: 10px; }
+  60% { height: 25px; }
+  80% { height: 15px; }
+  100% { height: 5px; }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
+  50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 30px rgba(59, 130, 246, 0.4); }
+}
+
+@keyframes fade-in-up {
   from {
     opacity: 0;
     transform: translateY(10px);
@@ -331,11 +346,19 @@ body {
 }
 
 .animate-sound-wave {
-  animation: sound-wave 1.5s infinite ease-in-out;
+  animation: sound-wave 1.2s infinite ease-in-out;
 }
 
-.animate-fade-in {
-  animation: fade-in 0.5s ease-in-out forwards;
+.animate-wave {
+  animation: wave 1.7s infinite ease-in-out;
+}
+
+.animate-glow {
+  animation: glow 2s infinite ease-in-out;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-in-out forwards;
 }
 
 .voice-visualizer {
@@ -344,12 +367,14 @@ body {
   align-items: flex-end;
   height: 60px;
   width: 100%;
+  gap: 2px;
 }
 
 .voice-visualizer-bar {
   width: 3px;
-  background-color: rgba(255, 255, 255, 0.7);
-  margin: 0 2px;
+  background-color: rgba(59, 130, 246, 0.7);
+  margin: 0 1px;
+  border-radius: 3px;
   transition: height 0.1s ease;
 }
 
@@ -358,6 +383,50 @@ body {
 .speaking-animation,
 .idle-state {
   transition: all 0.3s ease-in-out;
+}
+
+/* Voice modal new designs */
+.voice-modal-container {
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+}
+
+.voice-modal-content {
+  background: linear-gradient(145deg, rgba(25, 30, 40, 0.8), rgba(15, 20, 30, 0.9));
+}
+
+.voice-record-button {
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+  transition: all 0.3s ease;
+}
+
+.voice-record-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.7);
+}
+
+.voice-record-button:active {
+  transform: scale(0.95);
+}
+
+.voice-record-button.recording {
+  background: linear-gradient(145deg, #ef4444, #dc2626);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+  animation: pulse-audio 1.2s infinite ease-in-out;
+}
+
+.voice-record-ring {
+  border: 2px solid rgba(59, 130, 246, 0.6);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+  animation: glow 2s infinite ease-in-out;
+}
+
+.voice-record-ring.recording {
+  border-color: rgba(239, 68, 68, 0.6);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
 }
 
 /* Shadow Animations */

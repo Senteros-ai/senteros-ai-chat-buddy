@@ -96,9 +96,9 @@ const checkUsageLimits = (type: 'requests' | 'images'): boolean => {
   return currentUsage < limit;
 };
 
-// Get model based on content (use mistral-medium-3 for all messages now)
+// Get model based on content (use mistral-small-latest for all messages now)
 const getModelForContent = (): string => {
-  return 'mistral-medium-3';
+  return 'mistral-small-latest';
 };
 
 // Store user profile data from Supabase in localStorage for AI context
@@ -168,7 +168,7 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
           role: msg.role,
           content: [
             { type: "text", text: msg.content },
-            { type: "image", image_url: { url: processedImageUrl } }
+            { type: "image_url", url: processedImageUrl }
           ]
         };
       }
@@ -178,7 +178,7 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
       };
     });
     
-    // Use mistral-medium-3 model for all requests
+    // Use mistral-small-latest model for all requests
     const model = getModelForContent();
     
     console.log('Using model:', model, 'Has image:', hasImage);
