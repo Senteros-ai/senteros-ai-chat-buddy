@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, X } from 'lucide-react';
+import { Mic, X, Volume2, Play, Square } from 'lucide-react';
 import { generateChatCompletion, ChatMessage } from '@/services/mistralService';
 import { useToast } from "@/hooks/use-toast";
 import { speakText } from '@/services/voiceService';
@@ -20,6 +21,7 @@ const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({
   const [userMessage, setUserMessage] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [amplitudes, setAmplitudes] = useState<number[]>(Array(60).fill(0));
+  const [isAiSpeaking, setIsAiSpeaking] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -142,6 +144,15 @@ const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({
         .trim();
         
       // Speak the AI response
+      setIsAiSpeaking(true);
+      
+      // Add event listener to track when speech has ended
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.onend = () => {
+        setIsAiSpeaking(false);
+      };
+      
+      // Speak text also handles adding the utterance to the speechSynthesis queue
       speakText(cleanText);
     } catch (error) {
       console.error('Error generating AI response:', error);
@@ -215,7 +226,18 @@ const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({
   const handleCloseAndReset = () => {
     // Stop any ongoing speech synthesis
     window.speechSynthesis.cancel();
+    setIsAiSpeaking(false);
     onClose();
+  };
+  
+  const handleToggleSpeech = () => {
+    if (isAiSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsAiSpeaking(false);
+    } else if (aiResponse) {
+      setIsAiSpeaking(true);
+      speakText(aiResponse);
+    }
   };
   
   // Get language for UI texts
@@ -226,66 +248,160 @@ const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({
   if (!isOpen) return null;
   
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-gradient-to-b from-black to-gray-900 flex items-center justify-center z-50 animate-fade-in">
       <div className="relative w-full h-full flex flex-col items-center justify-center p-6">
         {/* Recording visualization */}
         <div className="relative mb-8">
-          <div 
-            className={`w-32 h-32 rounded-full bg-gradient-to-b from-blue-300 to-blue-500 flex items-center justify-center transition-all duration-200 ${
-              isRecording ? 'animate-pulse' : ''
-            }`}
-            style={{
-              transform: `scale(${1 + Math.max(...amplitudes.slice(-5)) * 0.3})`
-            }}
-          >
-            <Mic className="w-10 h-10 text-white" />
-          </div>
+          {isRecording ? (
+            <div className="recording-animation">
+              <div 
+                className="w-36 h-36 rounded-full bg-gradient-to-b from-blue-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/50 animate-pulse"
+                style={{
+                  transform: `scale(${1 + Math.max(...amplitudes.slice(-5)) * 0.5})`
+                }}
+              >
+                <div className="absolute inset-0 rounded-full bg-gradient-to-t from-blue-500/20 to-blue-300/20 animate-spin-slow"></div>
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center z-10">
+                  <Mic className="w-10 h-10 text-white" />
+                </div>
+              </div>
+              
+              {/* Sound wave visualization */}
+              <div className="voice-visualizer mt-4 flex items-center justify-center space-x-1">
+                {amplitudes.slice(-30).map((amp, i) => (
+                  <div
+                    key={i}
+                    className="voice-visualizer-bar bg-blue-400"
+                    style={{
+                      height: `${Math.max(3, amp * 60)}px`,
+                      width: '3px',
+                      opacity: i > 15 ? (i - 15) / 15 : (15 - i) / 15,
+                      transition: 'height 0.1s ease'
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : isAiSpeaking ? (
+            <div className="speaking-animation text-center">
+              <div className="w-36 h-36 rounded-full bg-gradient-to-b from-purple-400 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/50 animate-pulse">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-t from-purple-500/20 to-purple-300/20 animate-spin-slow"></div>
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center z-10">
+                  <Volume2 className="w-10 h-10 text-white" />
+                </div>
+              </div>
+              
+              {/* Sound wave for AI speaking */}
+              <div className="voice-visualizer mt-4 flex items-center justify-center space-x-1">
+                {Array(15).fill(0).map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-purple-400 animate-sound-wave"
+                    style={{
+                      height: '30px',
+                      width: '3px',
+                      animationDelay: `${i * 0.1}s`
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="idle-state">
+              <div className="w-36 h-36 rounded-full bg-gradient-to-b from-gray-500 to-gray-700 flex items-center justify-center shadow-lg">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">
+                  <Mic className="w-10 h-10 text-gray-300" />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         
         {/* Status message */}
-        <div className="text-white text-xl mb-6">
-          {isRecording ? (isRussian ? 'Говорите...' : 'Speaking...') : 
-            (isProcessing ? (isRussian ? 'Обработка...' : 'Processing...') : 
-              (userMessage ? '' : (isRussian ? 'Нажмите на кнопку микрофона' : 'Press the microphone button')))}
+        <div className="text-white text-xl mb-6 font-medium">
+          {isRecording ? (
+            <span className="animate-pulse">{isRussian ? 'Говорите...' : 'Speaking...'}</span>
+          ) : (
+            isProcessing ? (
+              <span>{isRussian ? 'Обработка...' : 'Processing...'}</span>
+            ) : (
+              isAiSpeaking ? (
+                <span className="animate-pulse">{isRussian ? 'Воспроизведение...' : 'Playing...'}</span>
+              ) : (
+                userMessage ? (
+                  <span>{isRussian ? 'Нажмите на микрофон, чтобы продолжить' : 'Tap the microphone to continue'}</span>
+                ) : (
+                  <span>{isRussian ? 'Нажмите на кнопку микрофона' : 'Press the microphone button'}</span>
+                )
+              )
+            )
+          )}
         </div>
         
         {/* User message and AI response */}
-        <div className="w-full max-w-2xl max-h-[70vh] overflow-y-auto bg-background/10 backdrop-blur-sm rounded-lg p-6 mb-6">
+        <div className="w-full max-w-2xl max-h-[60vh] overflow-y-auto bg-background/10 backdrop-blur-sm rounded-xl p-6 mb-6 border border-white/10 shadow-xl transition-all duration-300 ease-in-out">
           {userMessage && (
-            <div className="mb-4">
-              <div className="font-semibold text-white mb-2">{isRussian ? 'Вы:' : 'You:'}</div>
-              <div className="text-white/90 bg-primary/20 p-3 rounded">{userMessage}</div>
+            <div className="mb-6 animate-fade-in">
+              <div className="font-semibold text-white mb-2 flex items-center">
+                <div className="w-8 h-8 rounded-full bg-blue-500 mr-2 flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">{isRussian ? 'Вы' : 'You'}</span>
+                </div>
+                <span>{isRussian ? 'Вы:' : 'You:'}</span>
+              </div>
+              <div className="text-white/90 bg-primary/20 p-4 rounded-xl shadow-inner">{userMessage}</div>
             </div>
           )}
           
           {(isProcessing || aiResponse) && (
-            <div>
-              <div className="font-semibold text-white mb-2">{isRussian ? 'Ассистент:' : 'Assistant:'}</div>
+            <div className="animate-fade-in">
+              <div className="font-semibold text-white mb-2 flex items-center">
+                <div className="w-8 h-8 rounded-full bg-purple-500 mr-2 flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">AI</span>
+                </div>
+                <span>{isRussian ? 'Ассистент:' : 'Assistant:'}</span>
+              </div>
               {isProcessing ? (
-                <div className="bg-card/30 p-3 rounded">
+                <div className="bg-card/30 p-4 rounded-xl shadow-inner">
                   <TypingIndicator />
                 </div>
               ) : (
-                <div className="text-white/90 bg-card/30 p-3 rounded whitespace-pre-wrap">{aiResponse}</div>
+                <div className="text-white/90 bg-card/30 p-4 rounded-xl shadow-inner whitespace-pre-wrap">{aiResponse}</div>
               )}
             </div>
           )}
         </div>
         
         {/* Controls */}
-        <div className="flex gap-4">
+        <div className="flex gap-6">
           {!isRecording && !isProcessing && (
             <button
               onClick={startRecording}
-              className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center hover:bg-blue-600 transition-colors"
+              className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105"
             >
               <Mic className="w-8 h-8 text-white" />
             </button>
           )}
           
+          {aiResponse && !isProcessing && (
+            <button
+              onClick={handleToggleSpeech}
+              className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-105 ${
+                isAiSpeaking 
+                  ? "bg-gradient-to-r from-red-500 to-red-600 shadow-red-500/30 hover:shadow-red-500/50" 
+                  : "bg-gradient-to-r from-purple-500 to-purple-600 shadow-purple-500/30 hover:shadow-purple-500/50"
+              }`}
+            >
+              {isAiSpeaking ? (
+                <Square className="w-7 h-7 text-white" />
+              ) : (
+                <Play className="w-7 h-7 text-white ml-1" />
+              )}
+            </button>
+          )}
+          
           <button 
             onClick={handleCloseAndReset}
-            className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+            className="w-16 h-16 rounded-full bg-gradient-to-r from-gray-600 to-gray-700 flex items-center justify-center hover:from-gray-700 hover:to-gray-800 transition-all duration-300 shadow-lg hover:scale-105"
           >
             <X className="w-8 h-8 text-white" />
           </button>

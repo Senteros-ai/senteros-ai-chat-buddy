@@ -1,3 +1,4 @@
+
 import { ChatMessage } from './openRouterService';
 import { conversationExamples } from './aiTrainingExamples';
 
@@ -95,9 +96,8 @@ const checkUsageLimits = (type: 'requests' | 'images'): boolean => {
   return currentUsage < limit;
 };
 
-// Get model based on content (use Pixtral Large for images)
-const getModelForContent = (messages: ChatMessage[]): string => {
-  // For all messages, we'll now use mistral-medium-3 which supports images
+// Get model based on content (use mistral-medium-3 for all messages now)
+const getModelForContent = (): string => {
   return 'mistral-medium-3';
 };
 
@@ -110,6 +110,17 @@ export const syncUserProfileToLocalStorage = (userData: any) => {
 // Type guard to check if a message has an image_url
 const hasImageUrl = (message: any): message is ChatMessage & { image_url: string } => {
   return message && typeof message === 'object' && 'image_url' in message && typeof message.image_url === 'string';
+};
+
+// Handle image processing for API
+const processImageForAPI = (imageUrl: string): string => {
+  // If it's already a URL (http, https), return it as is
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl;
+  }
+  
+  // For base64 images, just return as is since Mistral API can handle them directly
+  return imageUrl;
 };
 
 export const generateChatCompletion = async (messages: ChatMessage[]): Promise<ChatMessage> => {
@@ -149,12 +160,16 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
     
     // Format messages for API with proper type checking
     const formattedMessages = messagesWithSystem.map(msg => {
-      // Use our type guard to safely access image_url property
       if (hasImageUrl(msg)) {
+        // Process image URL for API
+        const processedImageUrl = processImageForAPI(msg.image_url);
+        
         return {
           role: msg.role,
-          content: msg.content,
-          image_url: msg.image_url
+          content: [
+            { type: "text", text: msg.content },
+            { type: "image", image_url: { url: processedImageUrl } }
+          ]
         };
       }
       return {
@@ -164,9 +179,10 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
     });
     
     // Use mistral-medium-3 model for all requests
-    const model = getModelForContent(messages);
+    const model = getModelForContent();
     
     console.log('Using model:', model, 'Has image:', hasImage);
+    console.log('Formatted messages:', JSON.stringify(formattedMessages));
     
     const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
