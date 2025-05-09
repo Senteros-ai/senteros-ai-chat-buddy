@@ -102,7 +102,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                       <img 
                         src={message.image_url} 
                         alt="Attached image" 
-                        className="message-image max-w-xs rounded-md" 
+                        className="max-h-64 max-w-full rounded-md cursor-pointer" 
                         onClick={() => handleImageClick(message.image_url!)}
                       />
                     </div>
@@ -145,7 +145,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                           <img 
                             src={src} 
                             alt={alt} 
-                            className="message-image max-w-md" 
+                            className="max-h-64 max-w-full rounded-md cursor-pointer" 
                             onClick={() => src && handleImageClick(src)}
                           />
                         ),
@@ -162,8 +162,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       </div>
       
       {fullscreenImage && (
-        <div className="fullscreen-image-overlay" onClick={closeFullscreenImage}>
-          <img src={fullscreenImage} alt="Fullscreen image" className="fullscreen-image" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75" onClick={closeFullscreenImage}>
+          <img src={fullscreenImage} alt="Fullscreen image" className="max-h-[90vh] max-w-[90vw] object-contain" />
         </div>
       )}
     </>
