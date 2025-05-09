@@ -1,4 +1,3 @@
-
 import { ChatMessage } from './openRouterService';
 import { conversationExamples } from './aiTrainingExamples';
 
@@ -22,6 +21,8 @@ const SYSTEM_PROMPT = `Вы — SenterosAI, супер-дружелюбный и
 \`\`\`javascript
 console.log("Hello World!");
 \`\`\`
+
+ВАЖНО: Всегда обращайтесь к пользователю по имени, которое указано в его профиле, или просто "друг", если имя не указано. Никогда не используйте произвольные имена.
 `;
 
 // Generate training context from examples
@@ -48,12 +49,14 @@ const getEnhancedSystemPrompt = (): string => {
 const getUserProfileContext = (): string => {
   try {
     const userData = {
-      bio: localStorage.getItem('userBio') || ''
+      bio: localStorage.getItem('userBio') || '',
+      username: localStorage.getItem('username') || ''
     };
     
     // Only create context if there's actual data
-    if (userData.bio) {
+    if (userData.bio || userData.username) {
       let context = "Информация о пользователе для контекста:\n";
+      if (userData.username) context += `Имя пользователя: ${userData.username}\n`;
       if (userData.bio) context += `О себе: ${userData.bio}\n`;
       return context;
     }
@@ -96,15 +99,16 @@ const checkUsageLimits = (type: 'requests' | 'images'): boolean => {
   return currentUsage < limit;
 };
 
-// Get model based on content (use mistral-small-latest for all messages now)
-const getModelForContent = (): string => {
-  return 'mistral-small-latest';
+// Get model based on content - now use different models for images vs text
+const getModelForContent = (hasImage: boolean): string => {
+  return hasImage ? 'pixtral-12b-2409' : 'mistral-small-latest';
 };
 
 // Store user profile data from Supabase in localStorage for AI context
 export const syncUserProfileToLocalStorage = (userData: any) => {
   if (!userData) return;
   if (userData.bio) localStorage.setItem('userBio', userData.bio);
+  if (userData.user_metadata?.username) localStorage.setItem('username', userData.user_metadata.username);
 };
 
 // Type guard to check if a message has an image_url
@@ -178,8 +182,8 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
       };
     });
     
-    // Use mistral-small-latest model for all requests
-    const model = getModelForContent();
+    // Use pixtral-12b-2409 for images, otherwise mistral-small-latest
+    const model = getModelForContent(hasImage);
     
     console.log('Using model:', model, 'Has image:', hasImage);
     console.log('Formatted messages:', JSON.stringify(formattedMessages));

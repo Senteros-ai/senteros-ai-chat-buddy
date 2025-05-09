@@ -70,6 +70,10 @@ const Index = () => {
 
   useEffect(() => {
     if (user) {
+      // Sync username to localStorage for the AI to use
+      if (user.user_metadata?.username) {
+        localStorage.setItem('username', user.user_metadata.username);
+      }
       loadUserChats();
     }
   }, [user]);
