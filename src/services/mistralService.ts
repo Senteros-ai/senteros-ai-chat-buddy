@@ -32,7 +32,7 @@ const generateTrainingContext = (): string => {
   
   let trainingContext = "Вот несколько примеров ваших предыдущих разговоров. Используйте похожий стиль и тон:\n\n";
   
-  selectedExamples.forEach((example, index) => {
+  selectedExamples.forEach((example) => {
     trainingContext += `Пользователь: ${example.user}\n`;
     trainingContext += `SenterosAI: ${example.assistant}\n\n`;
   });
@@ -70,8 +70,7 @@ const getUserProfileContext = (): string => {
 // Usage tracking functions
 const getLimits = () => {
   return {
-    requestsPerDay: 100,
-    imagesPerDay: 10
+    requestsPerDay: 100
   };
 };
 
@@ -80,7 +79,7 @@ const getDateKey = () => {
   return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 };
 
-const incrementDailyUsage = (type: 'requests' | 'images'): number => {
+const incrementDailyUsage = (type: 'requests'): number => {
   const dateKey = getDateKey();
   const key = `senterosai_${type}_${dateKey}`;
   const currentUsage = parseInt(localStorage.getItem(key) || '0', 10);
@@ -89,19 +88,14 @@ const incrementDailyUsage = (type: 'requests' | 'images'): number => {
   return newUsage;
 };
 
-const checkUsageLimits = (type: 'requests' | 'images'): boolean => {
+const checkUsageLimits = (type: 'requests'): boolean => {
   const dateKey = getDateKey();
   const key = `senterosai_${type}_${dateKey}`;
   const currentUsage = parseInt(localStorage.getItem(key) || '0', 10);
   const limits = getLimits();
-  const limit = type === 'requests' ? limits.requestsPerDay : limits.imagesPerDay;
+  const limit = type === 'requests' ? limits.requestsPerDay : 0;
   
   return currentUsage < limit;
-};
-
-// Get model based on content - now use different models for images vs text
-const getModelForContent = (hasImage: boolean): string => {
-  return hasImage ? 'pixtral-12b-2409' : 'mistral-small-latest';
 };
 
 // Store user profile data from Supabase in localStorage for AI context
@@ -111,41 +105,22 @@ export const syncUserProfileToLocalStorage = (userData: any) => {
   if (userData.user_metadata?.username) localStorage.setItem('username', userData.user_metadata.username);
 };
 
-// Type guard to check if a message has an image_url
-const hasImageUrl = (message: any): message is ChatMessage & { image_url: string } => {
-  return message && typeof message === 'object' && 'image_url' in message && typeof message.image_url === 'string';
-};
-
-// Handle image processing for API
-const processImageForAPI = (imageUrl: string): string => {
-  // If it's already a URL (http, https), return it as is
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-    return imageUrl;
-  }
-  
-  // For base64 images, just return as is since Mistral API can handle them directly
-  return imageUrl;
-};
-
 export const generateChatCompletion = async (messages: ChatMessage[]): Promise<ChatMessage> => {
   try {
+    // If message has image, redirect to OpenRouter service
+    const lastUserMessage = [...messages].reverse().find(msg => msg.role === 'user');
+    if (lastUserMessage && 'image_url' in lastUserMessage && lastUserMessage.image_url) {
+      // Import dynamically to avoid circular dependency
+      const { generateChatCompletion: openRouterGenerate } = await import('./openRouterService');
+      return openRouterGenerate(messages);
+    }
+    
+    // Continue with text-only Mistral processing
     // Check if the daily request limit has been reached
     if (!checkUsageLimits('requests')) {
       return {
         role: 'assistant',
         content: 'Вы достигли дневного лимита запросов (100). Пожалуйста, попробуйте завтра или обратитесь к администратору.'
-      };
-    }
-    
-    // Check if there are image attachments in the latest user message
-    const lastUserMessage = [...messages].reverse().find(msg => msg.role === 'user');
-    const hasImage = hasImageUrl(lastUserMessage);
-    
-    // If there's an image, check image attachment limit
-    if (hasImage && !checkUsageLimits('images')) {
-      return {
-        role: 'assistant',
-        content: 'Вы достигли дневного лимита прикрепленных изображений (10). Пожалуйста, попробуйте завтра или обратитесь к администратору.'
       };
     }
     
@@ -162,30 +137,15 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
       ? messages 
       : [{ role: 'system', content: systemContent }, ...messages];
     
-    // Format messages for API with proper type checking
+    // Format messages for API
     const formattedMessages = messagesWithSystem.map(msg => {
-      if (hasImageUrl(msg)) {
-        // Process image URL for API
-        const processedImageUrl = processImageForAPI(msg.image_url);
-        
-        return {
-          role: msg.role,
-          content: [
-            { type: "text", text: msg.content },
-            { type: "image_url", url: processedImageUrl }
-          ]
-        };
-      }
       return {
         role: msg.role,
         content: msg.content
       };
     });
     
-    // Use pixtral-12b-2409 for images, otherwise mistral-small-latest
-    const model = getModelForContent(hasImage);
-    
-    console.log('Using model:', model, 'Has image:', hasImage);
+    console.log('Using model: mistral-small-latest');
     console.log('Formatted messages:', JSON.stringify(formattedMessages));
     
     const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
@@ -195,7 +155,7 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
         'Authorization': `Bearer ${getApiKey()}`,
       },
       body: JSON.stringify({
-        model: model,
+        model: 'mistral-small-latest',
         messages: formattedMessages,
         temperature: 0.7,
         max_tokens: 2048,
@@ -210,11 +170,6 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
 
     // Increment the request counter after successful API call
     incrementDailyUsage('requests');
-    
-    // If image was used, increment the image counter too
-    if (hasImage) {
-      incrementDailyUsage('images');
-    }
 
     const data = await response.json();
     

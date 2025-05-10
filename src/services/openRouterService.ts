@@ -6,7 +6,7 @@ export interface ChatMessage {
 }
 
 // Fixed API key that doesn't require user input
-const API_KEY = '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';
+const API_KEY = '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';
 
 export const getApiKey = (): string => {
   return API_KEY;
@@ -78,8 +78,8 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
       };
     }
     
-    // Using the meta-llama/llama-4-maverick:free model as requested
-    const model = 'meta-llama/llama-4-maverick:free';
+    // Using opengvlab/internvl3-14b:free model for image processing, mistral for text
+    const model = hasImage ? 'opengvlab/internvl3-14b:free' : 'mistral-small-latest';
     
     // Add system message if not already present
     const messagesWithSystem = messages.some(msg => msg.role === 'system') 
