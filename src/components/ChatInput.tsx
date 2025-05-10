@@ -2,7 +2,7 @@
 import React, { useState, useRef, KeyboardEvent, ChangeEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, StopCircle, Image, X } from "lucide-react";
+import { Send, StopCircle, Image, Mic, X } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
 
@@ -140,6 +140,18 @@ const ChatInput: React.FC<ChatInputProps> = ({
               disabled={disabled}
               className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
+            
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onVoiceRecording}
+              disabled={isGenerating || disabled}
+              className="shrink-0 text-muted-foreground hover:text-foreground"
+            >
+              <Mic className="h-5 w-5" />
+              <span className="sr-only">{isRussian ? "Голосовой ввод" : "Voice input"}</span>
+            </Button>
             
             <input
               type="file"

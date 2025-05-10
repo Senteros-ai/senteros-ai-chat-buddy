@@ -21,16 +21,11 @@ const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcribedText, setTranscribedText] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [visualizerValues, setVisualizerValues] = useState<number[]>(Array(20).fill(5));
   const audioRecorderRef = useRef<AudioRecorder | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
 
   // Clean up on unmount
   useEffect(() => {
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
       if (audioRecorderRef.current) {
         audioRecorderRef.current.cleanup();
       }
@@ -54,7 +49,7 @@ const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({
     try {
       setErrorMessage('');
       
-      const audioRecorder = new AudioRecorder(handleAudioData);
+      const audioRecorder = new AudioRecorder();
       audioRecorderRef.current = audioRecorder;
       
       const success = await audioRecorder.start();
@@ -115,132 +110,56 @@ const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({
     }
   };
 
-  // Audio visualization
-  const handleAudioData = (audioData: Float32Array) => {
-    // Create an animated visualization
-    const values = [];
-    const step = Math.floor(audioData.length / 20);
-    
-    for (let i = 0; i < 20; i++) {
-      const startIdx = i * step;
-      const endIdx = startIdx + step;
-      let sum = 0;
-      
-      for (let j = startIdx; j < endIdx; j++) {
-        sum += Math.abs(audioData[j]);
-      }
-      
-      const average = sum / step;
-      // Scale the value for better visualization (min 3px, max 40px)
-      const scaledValue = Math.max(3, Math.min(40, Math.floor(average * 100)));
-      values.push(scaledValue);
-    }
-    
-    setVisualizerValues(values);
-  };
-
-  // Generate a dynamic wave when not recording
-  useEffect(() => {
-    if (!isRecording && !isTranscribing && isOpen) {
-      const generateIdleWave = () => {
-        const values = Array(20).fill(0).map(() => {
-          return Math.floor(Math.random() * 15) + 3; // Random height between 3-18px
-        });
-        setVisualizerValues(values);
-        animationFrameRef.current = requestAnimationFrame(() => {
-          setTimeout(generateIdleWave, 200); // Update every 200ms
-        });
-      };
-      
-      generateIdleWave();
-      
-      return () => {
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-        }
-      };
-    }
-  }, [isRecording, isTranscribing, isOpen]);
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden border-none rounded-xl voice-modal-container">
-        <div className="voice-modal-content p-6 rounded-xl flex flex-col items-center space-y-6">
-          <div className="flex justify-between w-full">
-            <h2 className="text-xl font-semibold text-white">Голосовой ввод</h2>
-            <Button
-              variant="ghost"
-              className="p-0 h-auto text-white/70 hover:text-white hover:bg-transparent"
-              onClick={onClose}
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          </div>
-
-          {/* Voice visualizer */}
-          <div className="voice-visualizer my-4 h-16">
-            {visualizerValues.map((value, index) => (
-              <div
-                key={index}
-                className={`voice-visualizer-bar ${isRecording ? 'animate-wave' : 'animate-sound-wave'}`}
-                style={{ 
-                  height: `${value}px`,
-                  animationDelay: `${index * 0.05}s`,
-                  backgroundColor: isRecording 
-                    ? 'rgba(239, 68, 68, 0.7)' 
-                    : 'rgba(59, 130, 246, 0.7)'
-                }}
-              />
-            ))}
-          </div>
+      <DialogContent className="sm:max-w-md">
+        <div className="flex flex-col items-center space-y-6 p-6">
+          <h2 className="text-xl font-semibold">Голосовой ввод</h2>
 
           {/* Different states */}
           <div className="flex flex-col items-center space-y-4 w-full">
             {isTranscribing ? (
-              <div className="recording-animation animate-fade-in-up flex flex-col items-center space-y-3">
-                <div className="relative">
-                  <div className="voice-record-ring w-16 h-16 rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
-                  <div className="p-4 rounded-full bg-blue-500/20 animate-pulse flex items-center justify-center">
-                    <div className="text-blue-500 animate-spin-slow">
-                      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                    </div>
+              <div className="flex flex-col items-center space-y-3">
+                <div className="p-4 rounded-full bg-blue-500/20 animate-pulse flex items-center justify-center">
+                  <div className="text-blue-500 animate-spin">
+                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
                   </div>
                 </div>
-                <p className="text-white/80">Распознавание...</p>
+                <p className="text-muted-foreground">Распознавание...</p>
               </div>
             ) : isRecording ? (
-              <div className="recording-animation animate-fade-in-up flex flex-col items-center space-y-3">
+              <div className="flex flex-col items-center space-y-3">
                 <button
                   onClick={stopRecording}
-                  className="voice-record-button recording p-4 rounded-full flex items-center justify-center"
+                  className="p-4 rounded-full bg-destructive/90 text-white hover:bg-destructive flex items-center justify-center"
                 >
-                  <StopCircle className="h-8 w-8 text-white" />
+                  <StopCircle className="h-8 w-8" />
                 </button>
-                <p className="text-white/80">Запись...</p>
+                <p className="text-muted-foreground">Запись...</p>
               </div>
             ) : (
-              <div className="idle-state animate-fade-in-up flex flex-col items-center space-y-3">
+              <div className="flex flex-col items-center space-y-3">
                 <button
                   onClick={startRecording}
-                  className="voice-record-button p-4 rounded-full flex items-center justify-center"
+                  className="p-4 rounded-full bg-primary/80 text-white hover:bg-primary flex items-center justify-center"
                 >
-                  <Mic className="h-8 w-8 text-white" />
+                  <Mic className="h-8 w-8" />
                 </button>
-                <p className="text-white/80">Нажмите для записи</p>
+                <p className="text-muted-foreground">Нажмите для записи</p>
               </div>
             )}
 
             {/* Transcribed text display */}
             {transcribedText && (
-              <div className="w-full bg-white/10 p-3 rounded-lg animate-fade-in-up mt-4">
-                <p className="text-white/90">{transcribedText}</p>
+              <div className="w-full bg-muted p-3 rounded-lg mt-4">
+                <p className="text-foreground">{transcribedText}</p>
                 <div className="flex justify-end mt-2">
                   <Button
                     onClick={handleSubmit}
-                    className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+                    className="bg-primary hover:bg-primary/90 text-white flex items-center gap-2"
                   >
                     <Send className="h-4 w-4" />
                     Отправить
@@ -251,14 +170,14 @@ const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({
 
             {/* Error message */}
             {errorMessage && (
-              <div className="bg-red-500/20 p-3 rounded-lg w-full animate-fade-in-up">
-                <p className="text-red-300 text-sm">{errorMessage}</p>
+              <div className="bg-destructive/20 p-3 rounded-lg w-full">
+                <p className="text-destructive text-sm">{errorMessage}</p>
               </div>
             )}
           </div>
 
           {/* Microphone permissions info */}
-          <p className="text-white/50 text-xs text-center max-w-xs">
+          <p className="text-xs text-muted-foreground text-center max-w-xs">
             Для использования голосового ввода необходимо предоставить доступ к микрофону
           </p>
         </div>
