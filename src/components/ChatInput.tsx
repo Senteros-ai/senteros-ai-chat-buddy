@@ -2,7 +2,7 @@
 import React, { useState, useRef, KeyboardEvent, ChangeEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, StopCircle, Image, X } from "lucide-react";
+import { Send, StopCircle, X } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
 
@@ -93,10 +93,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
   return (
     <div className="border-t bg-card p-4">
       <form onSubmit={handleSubmit} className="mx-auto max-w-4xl">
@@ -119,18 +115,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
         
         <div className="flex gap-2">
           <div className="flex-1 flex gap-2 items-center border rounded-md px-2 bg-background">
-            <Button 
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={triggerFileInput}
-              disabled={isGenerating || disabled}
-              className="shrink-0 text-muted-foreground hover:text-foreground"
-            >
-              <Image className="h-5 w-5" />
-              <span className="sr-only">{isRussian ? "Прикрепить изображение" : "Attach image"}</span>
-            </Button>
-            
             <Input
               ref={inputRef}
               value={message}

@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
@@ -13,6 +13,9 @@ import Settings from "./pages/Settings";
 import { useEffect } from "react";
 import { syncUserProfileToLocalStorage } from "./services/mistralService";
 import { supabase } from "./integrations/supabase/client";
+import Chat from "./pages/Chat";
+import Intro from "./pages/Intro";
+import Teleport from "./pages/Teleport";
 
 const queryClient = new QueryClient();
 
@@ -107,7 +110,10 @@ const AppWithTheme = () => {
           <BrowserRouter>
             <Routes>
               <Route path="/auth" element={<Auth />} />
-              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+              <Route path="/" element={<ProtectedRoute><Navigate to="/chat" replace /></ProtectedRoute>} />
+              <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+              <Route path="/intro" element={<ProtectedRoute><Intro /></ProtectedRoute>} />
+              <Route path="/tp" element={<ProtectedRoute><Teleport /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
