@@ -2,7 +2,7 @@
 import React, { useState, useRef, KeyboardEvent, ChangeEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, StopCircle, X } from "lucide-react";
+import { Send, StopCircle, X, Image } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
 
@@ -124,6 +124,17 @@ const ChatInput: React.FC<ChatInputProps> = ({
               disabled={disabled}
               className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
+            
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={disabled}
+            >
+              <Image className="h-5 w-5" />
+            </Button>
             
             <input
               type="file"
