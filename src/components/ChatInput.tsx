@@ -9,16 +9,12 @@ import { useToast } from "@/hooks/use-toast";
 interface ChatInputProps {
   onSendMessage: (message: string, imageFile?: File) => void;
   onStopGeneration: () => void;
-  onVoiceRecording: () => void;
-  isGenerating: boolean;
   disabled?: boolean;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({ 
   onSendMessage, 
   onStopGeneration, 
-  onVoiceRecording,
-  isGenerating, 
   disabled = false 
 }) => {
   const [message, setMessage] = useState('');

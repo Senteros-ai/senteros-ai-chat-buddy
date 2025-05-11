@@ -6,14 +6,12 @@ import ChatMessage from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
 import ChatSidebar from '@/components/ChatSidebar';
 import SettingsDialog from '@/components/SettingsDialog';
-import VoiceRecordingModal from '@/components/VoiceRecordingModal';
 import { ChatMessage as ChatMessageType } from '@/services/openRouterService';
 import { 
   generateChatCompletion, 
   generateChatTitle,
   simulateStreamingResponse
 } from '@/services/mistralService';
-import { speakText } from '@/services/voiceService';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   fetchUserChats, 
@@ -36,8 +34,6 @@ const Index = () => {
   const [isThinking, setIsThinking] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [language, setLanguage] = useState<'ru' | 'en'>('ru');
-  const [voiceRecordingOpen, setVoiceRecordingOpen] = useState(false);
-  const [isVoiceMode, setIsVoiceMode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -145,10 +141,6 @@ const Index = () => {
     }
   };
 
-  const handleVoiceInput = () => {
-    setVoiceRecordingOpen(false);
-  };
-
   const handleStopGeneration = () => {
     stopGenerationRef.current = true;
     if (animationRef.current) {
@@ -156,7 +148,6 @@ const Index = () => {
     }
     setIsGenerating(false);
     setIsThinking(false);
-    window.speechSynthesis.cancel();
   };
 
   const convertImageToBase64 = (file: File): Promise<string> => {
@@ -229,16 +220,8 @@ const Index = () => {
         setAnimateLastMessage(true);
         setMessages(updatedMessages);
         
-        if (isVoiceMode && assistantMessage.content.length < 1000) {
-          speakText(assistantMessage.content);
-        }
-        
         if (isNewChat) {
           generateAITitle(chatId, updatedMessages);
-        }
-        
-        if (!voiceRecordingOpen) {
-          setIsVoiceMode(false);
         }
       }
     } catch (error) {
@@ -298,7 +281,6 @@ const Index = () => {
         <ChatHeader 
           onNewChat={handleNewChat}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          onOpenVoiceRecord={() => setVoiceRecordingOpen(true)}
         />
         
         <div className="flex-1 overflow-y-auto p-4">
@@ -343,15 +325,8 @@ const Index = () => {
         <ChatInput 
           onSendMessage={handleSendMessage} 
           onStopGeneration={handleStopGeneration}
-          onVoiceRecording={() => setVoiceRecordingOpen(true)}
           isGenerating={isGenerating}
           disabled={isLoading && !isGenerating}  
-        />
-        
-        <VoiceRecordingModal 
-          isOpen={voiceRecordingOpen} 
-          onClose={() => setVoiceRecordingOpen(false)}
-          onRecordingComplete={handleVoiceInput} 
         />
       </div>
     </div>

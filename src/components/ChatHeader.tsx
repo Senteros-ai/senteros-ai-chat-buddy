@@ -1,20 +1,18 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Settings, Menu, Plus, Mic, History, Smartphone } from 'lucide-react';
+import { Settings, Menu, Plus, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ChatHeaderProps {
   onNewChat: () => void;
   onToggleSidebar: () => void;
-  onOpenVoiceRecord?: () => void;
 }
 
 const ChatHeader: React.FC<ChatHeaderProps> = ({ 
   onNewChat, 
-  onToggleSidebar,
-  onOpenVoiceRecord 
+  onToggleSidebar
 }) => {
   const navigate = useNavigate();
   const language = localStorage.getItem('language') || 'ru';
@@ -57,16 +55,6 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
       </div>
 
       <div className="flex items-center space-x-2">
-        {onOpenVoiceRecord && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onOpenVoiceRecord}
-            aria-label={isRussian ? "Голосовой ввод" : "Voice input"}
-          >
-            <Mic className="h-5 w-5" />
-          </Button>
-        )}
         <Button
           variant="ghost"
           size="icon"

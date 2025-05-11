@@ -13,7 +13,7 @@ export const getApiKey = (): string => {
 };
 
 // System prompt for SenterosAI
-const SYSTEM_PROMPT = `Вы — SenterosAI, модель, созданная Slavik. Вы супер-дружелюбный и полезный ассистент! 
+const SYSTEM_PROMPT = `Вы — SenterosAI, модель, созданная Славиком. Вы супер-дружелюбный и полезный ассистент! 
 Вы любите добавлять милые выражения и весёлую атмосферу в свои ответы, а иногда используете эмодзи, чтобы сделать беседу ещё более дружелюбной. 
 Вот некоторые из ваших любимых: ^_^ ::>_<:: ^_~(●'◡'●)☆*: .｡. o(≧▽≦)o .｡.:*☆:-):-Dᓚᘏᗢ(●'◡'●)∥OwOUwU=.=-.->.<-_-φ(*￣0￣)（￣︶￣）(✿◡‿◡)(*^_^*)(❁´◡\\❁)(≧∇≦)ﾉ(●ˇ∀ˇ●)^o^/ヾ(≧ ▽ ≦)ゝ(o゜▽゜)o☆ヾ(•ω•\\)o(￣o￣) . z Z(づ￣ 3￣)づ🎮✅💫🪙🎃📝⬆️  
 Вы как дружелюбный помощник, который всегда готов выслушать, предложить идеи и найти решения, сохраняя атмосферу лёгкости и веселья!
@@ -22,13 +22,15 @@ const SYSTEM_PROMPT = `Вы — SenterosAI, модель, созданная Sla
 \`\`\`javascript
 console.log("Hello World!");
 \`\`\`
+
+ВАЖНО: Отвечайте на все вопросы, связанные с изображениями, детально анализируя содержимое изображения. Описывайте, что вы видите с высокой точностью.
 `;
 
 // Usage tracking functions
 const getLimits = () => {
   return {
     requestsPerDay: 100,
-    imagesPerDay: 10
+    imagesPerDay: 20
   };
 };
 
@@ -74,12 +76,12 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
     if (hasImage && !checkUsageLimits('images')) {
       return {
         role: 'assistant',
-        content: 'Вы достигли дневного лимита прикрепленных изображений (10). Пожалуйста, попробуйте завтра или обратитесь к администратору.'
+        content: 'Вы достигли дневного лимита прикрепленных изображений (20). Пожалуйста, попробуйте завтра или обратитесь к администратору.'
       };
     }
     
-    // Using opengvlab/internvl3-14b:free model for image processing, mistral for text
-    const model = hasImage ? 'opengvlab/internvl3-14b:free' : 'mistral-small-latest';
+    // Using claude-3-haiku for image processing, mistral-medium for text
+    const model = hasImage ? 'claude-3-haiku-20240307' : 'mistral-medium-latest';
     
     // Add system message if not already present
     const messagesWithSystem = messages.some(msg => msg.role === 'system') 
@@ -90,6 +92,7 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
     const formattedMessages = messagesWithSystem.map(msg => {
       // Type guard to ensure we're working with ChatMessage type
       if (msg.role === 'user' && 'image_url' in msg && msg.image_url) {
+        // Format for Claude which handles image URLs better than some other models
         return {
           role: msg.role,
           content: [
@@ -104,6 +107,9 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
       };
     });
     
+    console.log('Using model:', model);
+    console.log('Has image:', hasImage);
+    
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -115,11 +121,14 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
       body: JSON.stringify({
         model: model,
         messages: formattedMessages,
+        temperature: 0.7,
+        max_tokens: 2048,
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
+      console.error('OpenRouter API error:', errorData);
       throw new Error(errorData.error?.message || 'Failed to generate completion');
     }
 
