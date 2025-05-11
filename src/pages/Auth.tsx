@@ -11,9 +11,11 @@ import { useToast } from '@/components/ui/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAppLanguage } from '@/hooks/useAppLanguage';
 import { LanguageCode } from '@/hooks/useAppLanguage';
+import { Separator } from '@/components/ui/separator';
+import { Github, Discord } from 'lucide-react';
 
 const Auth = () => {
-  const { user, signIn, signUp, loading } = useAuth();
+  const { user, signIn, signUp, signInWithGithub, signInWithDiscord, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
@@ -63,6 +65,28 @@ const Auth = () => {
       await signUp(email, password, username);
     } catch (error) {
       // Error is handled in the signUp function
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGithubSignIn = async () => {
+    try {
+      setIsLoading(true);
+      await signInWithGithub();
+    } catch (error) {
+      // Error is handled in the signInWithGithub function
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDiscordSignIn = async () => {
+    try {
+      setIsLoading(true);
+      await signInWithDiscord();
+    } catch (error) {
+      // Error is handled in the signInWithDiscord function
     } finally {
       setIsLoading(false);
     }
@@ -138,7 +162,7 @@ const Auth = () => {
                   />
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex flex-col space-y-4">
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -146,6 +170,35 @@ const Auth = () => {
                     texts.signIn
                   )}
                 </Button>
+                
+                <div className="w-full">
+                  <Separator className="my-4">
+                    <span className="mx-2 text-xs text-muted-foreground">{isRussian ? "или продолжить с" : "or continue with"}</span>
+                  </Separator>
+                  
+                  <div className="flex gap-4 w-full mt-4">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="w-full flex items-center gap-2"
+                      onClick={handleGithubSignIn}
+                      disabled={isLoading}
+                    >
+                      <Github size={16} />
+                      GitHub
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="w-full flex items-center gap-2"
+                      onClick={handleDiscordSignIn}
+                      disabled={isLoading}
+                    >
+                      <Discord size={16} />
+                      Discord
+                    </Button>
+                  </div>
+                </div>
               </CardFooter>
             </form>
           </TabsContent>
@@ -183,7 +236,7 @@ const Auth = () => {
                   />
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex flex-col space-y-4">
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -191,6 +244,35 @@ const Auth = () => {
                     texts.signUp
                   )}
                 </Button>
+                
+                <div className="w-full">
+                  <Separator className="my-4">
+                    <span className="mx-2 text-xs text-muted-foreground">{isRussian ? "или продолжить с" : "or continue with"}</span>
+                  </Separator>
+                  
+                  <div className="flex gap-4 w-full mt-4">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="w-full flex items-center gap-2"
+                      onClick={handleGithubSignIn}
+                      disabled={isLoading}
+                    >
+                      <Github size={16} />
+                      GitHub
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="w-full flex items-center gap-2"
+                      onClick={handleDiscordSignIn}
+                      disabled={isLoading}
+                    >
+                      <Discord size={16} />
+                      Discord
+                    </Button>
+                  </div>
+                </div>
               </CardFooter>
             </form>
           </TabsContent>

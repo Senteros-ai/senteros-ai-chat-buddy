@@ -10,6 +10,8 @@ type AuthContextType = {
   signUp: (email: string, password: string, username: string) => Promise<{ success: boolean, error?: any }>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  signInWithGithub: () => Promise<void>;
+  signInWithDiscord: () => Promise<void>;
   loading: boolean;
 };
 
@@ -94,6 +96,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signInWithGithub = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: "Ошибка входа через GitHub",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const signInWithDiscord = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'discord',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: "Ошибка входа через Discord",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -113,7 +155,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, signUp, signIn, signOut, loading }}>
+    <AuthContext.Provider value={{ 
+      session, 
+      user, 
+      signUp, 
+      signIn, 
+      signOut, 
+      signInWithGithub, 
+      signInWithDiscord, 
+      loading 
+    }}>
       {children}
     </AuthContext.Provider>
   );
