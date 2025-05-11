@@ -2,7 +2,7 @@
 import React, { useState, useRef, KeyboardEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, StopCircle, Mic } from "lucide-react";
+import { Send, StopCircle } from "lucide-react";
 import { cn } from '@/lib/utils';
 
 interface ChatInputProps {
@@ -45,28 +45,15 @@ const ChatInput: React.FC<ChatInputProps> = ({
     <div className="border-t bg-card p-4">
       <form onSubmit={handleSubmit} className="mx-auto max-w-4xl">
         <div className="flex gap-2">
-          <div className="flex-1 flex gap-2 items-center border rounded-md px-2 bg-background">
-            <Input
-              ref={inputRef}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={isRussian ? "Введите сообщение..." : "Type your message..."}
-              disabled={disabled}
-              className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-            />
-            
-            {/* Microphone button */}
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              disabled={disabled}
-            >
-              <Mic className="h-5 w-5" />
-            </Button>
-          </div>
+          <Input
+            ref={inputRef}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={isRussian ? "Введите сообщение..." : "Type your message..."}
+            disabled={disabled}
+            className="flex-1 border rounded-md px-4 py-2 bg-background"
+          />
           
           <Button 
             type={isGenerating ? "button" : "submit"}
