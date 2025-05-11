@@ -1,13 +1,12 @@
 
-import React, { useState, useRef, KeyboardEvent, ChangeEvent } from 'react';
+import React, { useState, useRef, KeyboardEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, StopCircle, X, Mic } from "lucide-react";
+import { Send, StopCircle, Mic } from "lucide-react";
 import { cn } from '@/lib/utils';
-import { useToast } from "@/hooks/use-toast";
 
 interface ChatInputProps {
-  onSendMessage: (message: string, imageFile?: File) => void;
+  onSendMessage: (message: string) => void;
   onStopGeneration: () => void;
   isGenerating?: boolean;
   disabled?: boolean;
@@ -21,7 +20,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
   const [message, setMessage] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
 
   const language = localStorage.getItem('language') || 'ru';
   const isRussian = language === 'ru';

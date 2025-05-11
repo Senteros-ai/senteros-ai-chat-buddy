@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAppLanguage } from '@/hooks/useAppLanguage';
 import { LanguageCode } from '@/hooks/useAppLanguage';
 import { Separator } from '@/components/ui/separator';
-import { Github, Discord } from 'lucide-react';
+import { Github, MessageSquare } from 'lucide-react'; // Replaced Discord with MessageSquare
 
 const Auth = () => {
   const { user, signIn, signUp, signInWithGithub, signInWithDiscord, loading } = useAuth();
@@ -22,6 +22,7 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { language, languages, setLanguage, texts } = useAppLanguage();
+  const isRussian = language === 'ru'; // Add this line to define isRussian based on language
 
   // Redirect if already logged in
   if (user) {
@@ -194,7 +195,7 @@ const Auth = () => {
                       onClick={handleDiscordSignIn}
                       disabled={isLoading}
                     >
-                      <Discord size={16} />
+                      <MessageSquare size={16} /> {/* Replaced Discord icon with MessageSquare */}
                       Discord
                     </Button>
                   </div>
@@ -268,7 +269,7 @@ const Auth = () => {
                       onClick={handleDiscordSignIn}
                       disabled={isLoading}
                     >
-                      <Discord size={16} />
+                      <MessageSquare size={16} /> {/* Replaced Discord icon with MessageSquare */}
                       Discord
                     </Button>
                   </div>
