@@ -12,17 +12,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAppLanguage } from '@/hooks/useAppLanguage';
 import { LanguageCode } from '@/hooks/useAppLanguage';
 import { Separator } from '@/components/ui/separator';
-import { Github, MessageSquare } from 'lucide-react'; // Replaced Discord with MessageSquare
 
 const Auth = () => {
-  const { user, signIn, signUp, signInWithGithub, signInWithDiscord, loading } = useAuth();
+  const { user, signIn, signUp, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { language, languages, setLanguage, texts } = useAppLanguage();
-  const isRussian = language === 'ru'; // Add this line to define isRussian based on language
+  // Define isRussian based on the language
+  const isRussian = language === 'ru';
 
   // Redirect if already logged in
   if (user) {
@@ -66,28 +66,6 @@ const Auth = () => {
       await signUp(email, password, username);
     } catch (error) {
       // Error is handled in the signUp function
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGithubSignIn = async () => {
-    try {
-      setIsLoading(true);
-      await signInWithGithub();
-    } catch (error) {
-      // Error is handled in the signInWithGithub function
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDiscordSignIn = async () => {
-    try {
-      setIsLoading(true);
-      await signInWithDiscord();
-    } catch (error) {
-      // Error is handled in the signInWithDiscord function
     } finally {
       setIsLoading(false);
     }
@@ -163,7 +141,7 @@ const Auth = () => {
                   />
                 </div>
               </CardContent>
-              <CardFooter className="flex flex-col space-y-4">
+              <CardFooter>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -171,35 +149,6 @@ const Auth = () => {
                     texts.signIn
                   )}
                 </Button>
-                
-                <div className="w-full">
-                  <Separator className="my-4">
-                    <span className="mx-2 text-xs text-muted-foreground">{isRussian ? "или продолжить с" : "or continue with"}</span>
-                  </Separator>
-                  
-                  <div className="flex gap-4 w-full mt-4">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      className="w-full flex items-center gap-2"
-                      onClick={handleGithubSignIn}
-                      disabled={isLoading}
-                    >
-                      <Github size={16} />
-                      GitHub
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      className="w-full flex items-center gap-2"
-                      onClick={handleDiscordSignIn}
-                      disabled={isLoading}
-                    >
-                      <MessageSquare size={16} /> {/* Replaced Discord icon with MessageSquare */}
-                      Discord
-                    </Button>
-                  </div>
-                </div>
               </CardFooter>
             </form>
           </TabsContent>
@@ -236,8 +185,13 @@ const Auth = () => {
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
+                <div className="text-sm text-muted-foreground">
+                  {isRussian 
+                    ? "После регистрации вам будет отправлено письмо для подтверждения аккаунта." 
+                    : "After registration, you will receive an email to confirm your account."}
+                </div>
               </CardContent>
-              <CardFooter className="flex flex-col space-y-4">
+              <CardFooter>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -245,35 +199,6 @@ const Auth = () => {
                     texts.signUp
                   )}
                 </Button>
-                
-                <div className="w-full">
-                  <Separator className="my-4">
-                    <span className="mx-2 text-xs text-muted-foreground">{isRussian ? "или продолжить с" : "or continue with"}</span>
-                  </Separator>
-                  
-                  <div className="flex gap-4 w-full mt-4">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      className="w-full flex items-center gap-2"
-                      onClick={handleGithubSignIn}
-                      disabled={isLoading}
-                    >
-                      <Github size={16} />
-                      GitHub
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      className="w-full flex items-center gap-2"
-                      onClick={handleDiscordSignIn}
-                      disabled={isLoading}
-                    >
-                      <MessageSquare size={16} /> {/* Replaced Discord icon with MessageSquare */}
-                      Discord
-                    </Button>
-                  </div>
-                </div>
               </CardFooter>
             </form>
           </TabsContent>
