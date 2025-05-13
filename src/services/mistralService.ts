@@ -1,6 +1,6 @@
 
 import { ChatMessage } from './openRouterService';
-import { conversationExamples } from './aiTrainingExamples';
+import { conversationExamples, additionalExamples } from './aiTrainingExamples';
 
 // Re-export the ChatMessage type
 export type { ChatMessage };
