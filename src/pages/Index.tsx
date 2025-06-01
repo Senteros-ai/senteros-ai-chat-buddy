@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import ChatHeader from '@/components/ChatHeader';
@@ -6,6 +5,7 @@ import ChatMessage from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
 import ChatSidebar from '@/components/ChatSidebar';
 import SettingsDialog from '@/components/SettingsDialog';
+import MemoryNotification from '@/components/MemoryNotification';
 import { ChatMessage as ChatMessageType } from '@/services/openRouterService';
 import { 
   generateChatCompletion, 
@@ -21,6 +21,7 @@ import {
   Chat,
   updateChatTitle
 } from '@/services/chatService';
+import { memoryService, MemorySuggestion } from '@/services/memoryService';
 import { v4 as uuidv4 } from 'uuid';
 
 const Index = () => {
@@ -34,6 +35,7 @@ const Index = () => {
   const [isThinking, setIsThinking] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [language, setLanguage] = useState<'ru' | 'en'>('ru');
+  const [memorySuggestion, setMemorySuggestion] = useState<MemorySuggestion | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -159,8 +161,36 @@ const Index = () => {
     });
   };
 
+  const handleMemoryConfirm = () => {
+    if (memorySuggestion) {
+      memoryService.addMemory(
+        memorySuggestion.content,
+        memorySuggestion.type,
+        memorySuggestion.importance
+      );
+      toast({
+        title: language === 'ru' ? 'Информация сохранена' : 'Information saved',
+        description: memorySuggestion.content,
+        variant: 'default',
+      });
+    }
+    setMemorySuggestion(null);
+  };
+
+  const handleMemoryReject = () => {
+    setMemorySuggestion(null);
+  };
+
   const handleSendMessage = async (content: string, imageFile?: File) => {
     if (!content.trim() && !imageFile) return;
+
+    // Анализируем сообщение на предмет важной информации
+    if (content.trim()) {
+      const suggestions = memoryService.analyzeMessage(content);
+      if (suggestions.length > 0 && suggestions[0].confidence > 0.7) {
+        setMemorySuggestion(suggestions[0]);
+      }
+    }
 
     let image_url: string | undefined;
     
@@ -284,6 +314,15 @@ const Index = () => {
         />
         
         <div className="flex-1 overflow-y-auto p-4">
+          {memorySuggestion && (
+            <MemoryNotification
+              content={memorySuggestion.content}
+              onConfirm={handleMemoryConfirm}
+              onReject={handleMemoryReject}
+              language={language}
+            />
+          )}
+          
           {messages.length === 0 ? (
             <div className="flex h-full items-center justify-center">
               <div className="text-center space-y-4 p-8 max-w-md bg-card/70 rounded-xl shadow-lg backdrop-blur-sm border border-border/30">
