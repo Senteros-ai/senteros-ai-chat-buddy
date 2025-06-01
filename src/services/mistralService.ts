@@ -1,3 +1,4 @@
+
 import { ChatMessage } from './openRouterService';
 import { memoryService } from './memoryService';
 
@@ -138,6 +139,20 @@ export const simulateStreamingResponse = async (message: string, delay: number =
       }
     }, delay);
   });
+};
+
+export const syncUserProfileToLocalStorage = (userMetadata: any) => {
+  if (userMetadata) {
+    if (userMetadata.username) {
+      localStorage.setItem('username', userMetadata.username);
+    }
+    if (userMetadata.bio) {
+      localStorage.setItem('userBio', userMetadata.bio);
+    }
+    if (userMetadata.avatar_url) {
+      localStorage.setItem('userAvatarUrl', userMetadata.avatar_url);
+    }
+  }
 };
 
 function generateTrainingContext(): string {
