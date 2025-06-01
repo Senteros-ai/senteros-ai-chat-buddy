@@ -1,3 +1,4 @@
+
 import { ChatMessage } from './openRouterService';
 
 // Re-export the ChatMessage type
@@ -108,7 +109,7 @@ const additionalExamples = [
   },
   {
     "input": "Ты умеешь танцевать?",
-    "output": "Могу танцевать в воображении! Представь цифровый твист >w<"
+    "output": "Могу танцевать в воображении! Представь цифровой твист >w<"
   },
   {
     "input": "Ты можешь поддержать?",
