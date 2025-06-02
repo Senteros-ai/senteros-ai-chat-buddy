@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,7 +9,6 @@ import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Settings from "./pages/Settings";
 import { useEffect } from "react";
-import { syncUserProfileToLocalStorage } from "./services/mistralService";
 import { supabase } from "./integrations/supabase/client";
 import Chat from "./pages/Chat";
 import Intro from "./pages/Intro";
@@ -79,7 +77,10 @@ const syncUserProfile = async () => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (user && user.user_metadata) {
-      syncUserProfileToLocalStorage(user.user_metadata);
+      // Store username in localStorage for the AI to use
+      if (user.user_metadata.username) {
+        localStorage.setItem('username', user.user_metadata.username);
+      }
     }
   } catch (error) {
     console.error('Error syncing user profile:', error);

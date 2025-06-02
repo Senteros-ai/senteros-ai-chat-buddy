@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import ChatHeader from '@/components/ChatHeader';
@@ -11,7 +12,7 @@ import {
   generateChatCompletion, 
   generateChatTitle,
   simulateStreamingResponse
-} from '@/services/mistralService';
+} from '@/services/openRouterService';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   fetchUserChats, 
