@@ -9,6 +9,7 @@ export interface ChatMessage {
 const API_KEY = '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';
 
 export const getApiKey = (): string => {
+  console.log('getApiKey called, returning fixed API key');
   return API_KEY;
 };
 
@@ -59,6 +60,8 @@ const checkUsageLimits = (type: 'requests' | 'images'): boolean => {
 };
 
 export const generateChatCompletion = async (messages: ChatMessage[]): Promise<ChatMessage> => {
+  console.log('generateChatCompletion called');
+  
   try {
     // Check if the daily request limit has been reached
     if (!checkUsageLimits('requests')) {
@@ -109,6 +112,7 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
     
     console.log('Using model:', model);
     console.log('Has image:', hasImage);
+    console.log('API Key being used:', getApiKey() ? 'API key is set' : 'API key is NOT set');
     
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -129,6 +133,7 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
     if (!response.ok) {
       const errorData = await response.json();
       console.error('OpenRouter API error:', errorData);
+      console.error('Full error response:', errorData);
       throw new Error(errorData.error?.message || 'Failed to generate completion');
     }
 
@@ -152,6 +157,7 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
     };
   } catch (error) {
     console.error('Error generating chat completion:', error);
+    console.error('Error details:', error);
     throw error;
   }
 };
