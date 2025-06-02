@@ -198,7 +198,7 @@ const getEnhancedSystemPrompt = (): string => {
 
 export const generateChatCompletion = async (messages: ChatMessage[]): Promise<ChatMessage> => {
   if (!apiKey) {
-    throw new Error('MISTRAL_API_KEY is not set');
+    throw new Error('API ключ не найден');
   }
 
   // Преобразуем сообщения в формат, поддерживающий изображения
@@ -265,7 +265,7 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
 
 export const generateChatTitle = async (messages: ChatMessage[]): Promise<string | null> => {
   if (!apiKey) {
-    throw new Error('MISTRAL_API_KEY is not set');
+    throw new Error('API ключ не найден');
   }
 
   const response = await fetch(apiUrl, {
