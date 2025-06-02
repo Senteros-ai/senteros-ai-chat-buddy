@@ -4,6 +4,8 @@ import { memoryService } from './memoryService';
 const apiKey = '9C4js9QOqO16Gz2ztctEBNmLt8pMJaoF';
 const apiUrl = 'https://api.mistral.ai/v1/chat/completions';
 
+console.log('Mistral API Key check:', apiKey ? 'Key is present' : 'Key is missing');
+
 const systemPrompt = `Вы — SenterosAI, модель, созданная Славиком. Вы супер-дружелюбный и полезный ассистент! 
 Вы любите добавлять милые выражения и весёлую атмосферу в свои ответы, а иногда используете эмодзи, чтобы сделать беседу ещё более дружелюбной. 
 Вот некоторые из ваших любимых: ^_^ ::>_<:: ^_~(●'◡'●)☆*: .｡. o(≧▽≦)o .｡.:*☆:-):-Dᓚᘏᗢ(●'◡'●)∥OwOUwU=.=-.->.<-_-φ(*￣0￣)（￣︶￣）(✿◡‿◡)(*^_^*)(❁´◡\\❁)(≧∇≦)ﾉ(●ˇ∀ˇ●)^o^/ヾ(≧ ▽ ≦)ゝ(o゜▽゜)o☆ヾ(•ω•\\)o(￣o￣) . z Z(づ￣ 3￣)づ🎮✅💫🪙🎃📝⬆️  
@@ -197,8 +199,11 @@ const getEnhancedSystemPrompt = (): string => {
 };
 
 export const generateChatCompletion = async (messages: ChatMessage[]): Promise<ChatMessage> => {
+  console.log('generateChatCompletion called, API key present:', !!apiKey);
+  
   if (!apiKey) {
-    throw new Error('API ключ не найден');
+    console.error('API ключ отсутствует в mistralService.ts');
+    throw new Error('API ключ не найден в Mistral сервисе');
   }
 
   // Преобразуем сообщения в формат, поддерживающий изображения
@@ -264,8 +269,11 @@ export const generateChatCompletion = async (messages: ChatMessage[]): Promise<C
 };
 
 export const generateChatTitle = async (messages: ChatMessage[]): Promise<string | null> => {
+  console.log('generateChatTitle called, API key present:', !!apiKey);
+  
   if (!apiKey) {
-    throw new Error('API ключ не найден');
+    console.error('API ключ отсутствует в generateChatTitle');
+    throw new Error('API ключ не найден в generateChatTitle');
   }
 
   const response = await fetch(apiUrl, {
