@@ -240,6 +240,7 @@ const Index = () => {
       }
 
       if (!stopGenerationRef.current) {
+        console.log('Calling generateChatCompletion from openRouterService');
         const assistantMessage = await generateChatCompletion(updatedMessages);
         
         if (chatId) {
